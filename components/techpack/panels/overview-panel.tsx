@@ -72,9 +72,9 @@ export function OverviewPanel() {
             <p className="eyebrow">Readiness</p>
             <h2>Factory handoff checklist</h2>
           </div>
-          <strong className="completion-number">82%</strong>
+          <strong className="completion-number">{product.progress}%</strong>
         </div>
-        <Progress value={82} />
+        <Progress value={product.progress} />
         <div className="checklist-grid">
           {productSections.slice(1, 9).map((section) => (
             <div key={section.id} className={section.done ? "check-item done" : "check-item"}>

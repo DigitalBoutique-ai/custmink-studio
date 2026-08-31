@@ -39,3 +39,4 @@ test-results/
 
 # playwright mcp scratch output
 .playwright-mcp/
+.env*
