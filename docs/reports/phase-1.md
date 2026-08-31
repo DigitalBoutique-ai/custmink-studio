@@ -229,7 +229,7 @@ disabled, which contradicts the project's Neon compute rules. Worth a look.
 | | |
 |---|---|
 | Vercel project | `digitalboutique/custmink-studio` |
-| Preview URL | https://custmink-studio-q4kx728va-digitalboutique.vercel.app |
+| Preview URL | https://custmink-studio-k0veqoy9s-digitalboutique.vercel.app |
 | Production URL | https://custmink-studio-4amjcrp8i-digitalboutique.vercel.app |
 | Neon project | `custmink-studio` (`purple-king-22972792`), AWS us-east-1, PG 17 |
 | Neon compute | 0.25 CU ceiling, 5-minute scale-to-zero |
