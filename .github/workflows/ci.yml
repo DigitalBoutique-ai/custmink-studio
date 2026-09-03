@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A newer push to the same branch makes the in-flight run irrelevant.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # Matches the Vercel runtime, so a green CI predicts a green deploy.
+          node-version: 24.x
+          cache: npm
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm run test
+
+      - name: Neon compute preflight
+        run: npm run preflight
+
+      # No DATABASE_URL is set on purpose: db() is lazy and the data layer falls
+      # back to the demo dataset without a session, so the build must not need a
+      # database. If this step ever starts requiring one, something now wakes
+      # Postgres during a render.
+      - name: Build
+        run: npm run build
