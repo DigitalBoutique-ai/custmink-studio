@@ -39,4 +39,8 @@ test-results/
 
 # playwright mcp scratch output
 .playwright-mcp/
+
+# curl artifacts — `vercel curl ... -w` writes a file named -w if flags are misordered
+-w
+deploy-log.md
 .env*
