@@ -81,13 +81,25 @@ export const getProduct = cache(async (productId: string): Promise<Product | nul
  * are already product-scoped so only the bodies change.
  */
 export const getColorways = cache(async (_productId: string): Promise<Colorway[]> => {
+  const session = await getSession();
+  if (session) {
+    assertCan(session.role, "product:read");
+  }
   return colorways;
 });
 
 export const getBomRows = cache(async (_productId: string): Promise<BomRow[]> => {
+  const session = await getSession();
+  if (session) {
+    assertCan(session.role, "product:read");
+  }
   return bomRows;
 });
 
 export const getMeasurements = cache(async (_productId: string): Promise<MeasurementRow[]> => {
+  const session = await getSession();
+  if (session) {
+    assertCan(session.role, "product:read");
+  }
   return measurements;
 });

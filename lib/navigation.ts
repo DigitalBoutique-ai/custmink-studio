@@ -7,6 +7,7 @@
  */
 
 import type { IconName } from "@/components/icon";
+import { productSectionHref, productSectionSpecs } from "@/lib/sections/registry";
 import type { SectionKey } from "@/types/techpack";
 
 export type NavItem = {
@@ -58,22 +59,31 @@ export type ProductSection = {
   done: boolean;
 };
 
-export const productSections: ProductSection[] = [
-  { id: "overview", label: "Overview", icon: "clipboard-list", done: true },
-  { id: "design", label: "Sketch / Design", icon: "shirt", done: true },
-  { id: "colorways", label: "Colorways", icon: "palette", done: true },
-  { id: "bom", label: "BOM / Materials", icon: "layers-3", done: true },
-  { id: "artwork", label: "Artwork", icon: "file-image", done: true },
-  { id: "measurements", label: "Sizes / Measurements", icon: "ruler", done: false },
-  { id: "sampling", label: "Sampling", icon: "package-check", done: false },
-  { id: "construction", label: "Construction", icon: "file-text", done: false },
-  { id: "packaging", label: "Packaging / Labels", icon: "tags", done: false },
-  { id: "history", label: "Version History", icon: "history", done: true },
-];
+/**
+ * Sections whose checklist tick is shown as complete on the demo product.
+ *
+ * Phase 2 replaces this with per-product `product_section_statuses` rows; until
+ * then the ticks are static while the headline readiness percentage is already
+ * derived. Keep the two consistent when wiring it up.
+ */
+const DEMO_COMPLETE_SECTIONS = new Set<SectionKey>([
+  "overview",
+  "design",
+  "colorways",
+  "bom",
+  "artwork",
+  "history",
+]);
 
-export function productSectionHref(productId: string, section: SectionKey): string {
-  return `/products/${productId}/${section}`;
-}
+/** Derived from the section registry — add sections there, not here. */
+export const productSections: ProductSection[] = productSectionSpecs.map((section) => ({
+  id: section.id,
+  label: section.label,
+  icon: section.icon,
+  done: DEMO_COMPLETE_SECTIONS.has(section.id),
+}));
+
+export { productSectionHref };
 
 export function findSection(section: SectionKey): ProductSection | undefined {
   return productSections.find((item) => item.id === section);

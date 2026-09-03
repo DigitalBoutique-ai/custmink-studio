@@ -1,4 +1,4 @@
-import { productSections } from "@/lib/navigation";
+import { TOTAL_SECTIONS } from "@/lib/sections/registry";
 import type { Product, ProductStatus } from "@/types/techpack";
 
 /**
@@ -17,7 +17,7 @@ export const STATUS_LABELS: Record<string, ProductStatus> = {
   archived: "Archived",
 };
 
-export const TOTAL_SECTIONS = productSections.length;
+export { TOTAL_SECTIONS };
 
 /**
  * Factory-readiness score: the share of specification sections marked complete.
