@@ -18,7 +18,8 @@
     "db:studio": "drizzle-kit studio",
     "db:seed": "tsx scripts/seed.ts",
     "preflight": "bash scripts/preflight.sh",
-    "verify": "npm run typecheck && npm run lint && npm run test && npm run preflight"
+    "verify": "npm run typecheck && npm run lint && npm run test && npm run preflight",
+    "flats:preview": "tsx scripts/flat-preview.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.1",
