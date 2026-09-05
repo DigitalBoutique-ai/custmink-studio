@@ -7,6 +7,12 @@ repo. Read both before changing anything.
 
 Last updated: 2026-09-05.
 
+> **An unapplied scope amendment is sitting in `research/`.** It changes the
+> schema rules and the pilot-customer decision, and two of its items are
+> cheap now and expensive later. Read
+> `research/2026-09-05_scope-amendment-prompt.md` before planning any Phase 2
+> work. It is item 1 below.
+
 ---
 
 ## Where things stand
@@ -42,7 +48,37 @@ sequencing, cost model, and the reasoning behind the decisions below.
 
 ## Pick up here
 
-**1. Clerk credentials — [DECISION, and the hard blocker].** Nothing
+**1. Apply the scope amendment — [WORK, do this before anything else].**
+`research/2026-09-05_scope-amendment-prompt.md` is a scope change written after
+a competitive teardown of Techpacker, Backbone, Delogue and Centric, plus a
+pilot-customer decision. It was added to the repo on 2026-09-05 and **has not
+been applied**. It amends the master prompt in place (each change marked
+`<!-- amended 2026-09-05 -->`), adds `docs/DECISIONS.md`, and adds a stubbed
+`tests/schema-rules.test.ts`. It explicitly says: do not start Phase 2, resume
+at the PDF slice afterwards. The five substantive changes:
+
+- **`brands` table between organization and collections** — org → brands →
+  collections → products, with brand-scoped libraries and PDF settings.
+  `organization_settings` keeps org-level defaults only. **This must land in the
+  first Phase 2 migration**: every product carries `brand_id`, and retrofitting
+  it rewrites every product row.
+- **Public API and webhooks** — `api_keys`, `webhooks`, `webhook_deliveries`,
+  `/api/v1/**` wrapping the same server actions the UI calls, and
+  `/settings/developers`. Phase 4, alongside share links. The teardown argues
+  this is the primary wedge: no competitor under $100/mo has one.
+- **AI-draft provenance** — a `source` enum (`manual|library|import|api|ai_draft`)
+  and `accepted_at` on every row table AI can write to. Cheap now, impossible
+  later, and it survives the `ai_proposals` row being closed.
+- **Factory guests are free and unlimited on every plan** — one sentence in §10.
+  Per-supplier seat fees are the top pricing complaint about the incumbents.
+- **"Start from a blank"** — seed fabric, composition, weight and size chart from
+  a wholesale catalog SKU. SanMar data exists in Supabase; treat it as an import
+  source behind an interface, not a dependency.
+
+Note the amendment references `docs/research/`; the files are actually at
+`research/`. Fix one or the other.
+
+**2. Clerk credentials — [DECISION, and the hard blocker].** Nothing
 tenant-real ships without it. `lib/auth/session.ts` returns a development
 session gated behind `ALLOW_DEV_SESSION`, set on preview only. Production has no
 session and therefore renders the demo dataset. Wiring it is replacing the body
@@ -51,40 +87,49 @@ no call site changes. Then delete `DEV_ORGANIZATION_ID`, `DEV_USER_ID`, and
 `ALLOW_DEV_SESSION`. **`auth()` may only be called inside `app/(app)/**`** — the
 lint rule `custmink/no-dynamic-in-public` enforces this; do not disable it.
 
-**2. Anthropic credentials — [DECISION].** Blocks the AI structured-draft spike.
+**3. Confirm Exora's first style is a hoodie — [DECISION, needs the client].**
+Exora Ink is now the designated pilot (see "What shipped"). `hoodie` is the only
+flat template that exists. A tee or a jogger means a new
+`lib/flats/templates/*.ts` — roughly 300 lines of geometry — so this answer
+gates item 5. Also needed from them: reference blank SKU, target fit changes,
+fabric and weight, trims and labels, artwork, colorways, target factory and MOQ.
+
+**4. Anthropic credentials — [DECISION].** Blocks the AI structured-draft spike.
 No `ANTHROPIC_API_KEY` and the `ant` CLI is not installed.
 
-**3. PDF vertical slice — [WORK, unblocked, do this next].** The remaining half
-of the outbound demo: one hardcoded hoodie through React PDF to a branded,
-paginated document, now with a real vector flat to place in it. The question it
-answers is whether the output is something a factory accepts. Nothing else
-depends on it, and it is what you lead cold outreach with.
+**5. PDF vertical slice — [WORK, unblocked, the main build item].** One style
+through React PDF to a branded, paginated document, using the vector flat that
+now exists. The question it answers is whether the output is something a factory
+accepts, and it doubles as the outbound demo. **The subject is no longer the
+Riviera seed** — it is Exora's first real style. Until those details arrive,
+keep the hoodie template and mark every value that will be replaced with
+`TODO(exora)`; do not invent a second fictional garment.
 
-**4. Finish the hoodie template — [WORK].** See "What surprised me" #6. It is a
+**6. Finish the hoodie template — [WORK].** See "What surprised me" #6. It is a
 credible schematic, not an illustrator-grade flat.
 
-**5. Section generator — [WORK].** `scripts/gen/section.ts` plus
+**7. Section generator — [WORK].** `scripts/gen/section.ts` plus
 `.claude/skills/techpack-section/SKILL.md`. Deterministic parts get a script,
 judgment parts get a skill. Emitted stubs must **throw**, never return a
 plausible empty array — a silently-passing stub is how a section gets marked
 done. The registry it generates against already exists.
 
-**6. Neon branch-per-PR — [WORK].** Use Neon's own Vercel integration. A
+**8. Neon branch-per-PR — [WORK].** Use Neon's own Vercel integration. A
 hand-rolled Actions workflow that creates and reaps branches is ~200 lines of
 rot.
 
-**7. `app/sitemap.ts` and `scripts/verify-routes.ts` — [WORK].** Both derive
+**9. `app/sitemap.ts` and `scripts/verify-routes.ts` — [WORK].** Both derive
 from `lib/sections/registry.ts`. This is what stops the route-200 check being a
 manual chore.
 
-**8. `tests/migrations.test.ts` — [WORK].** Regex `drizzle/*.sql` for
+**10. `tests/migrations.test.ts` — [WORK].** Regex `drizzle/*.sql` for
 `DROP TABLE|DROP COLUMN|ALTER COLUMN … TYPE`, failing unless annotated
 `-- expand-contract:`. Enforces the master prompt's rollback-path rule.
 
-**9. Then Phase 2** — tech-pack CRUD, ~25 tables. `tests/isolation.test.ts`
-(two seeded orgs on a Neon branch, org B reads zero of org A's rows) becomes
-writable once mutations exist. That is the test that actually proves tenancy;
-the lint rule only proves shape.
+**11. Then Phase 2** — tech-pack CRUD, ~25 tables, `brands` in the first
+migration. `tests/isolation.test.ts` (two seeded orgs on a Neon branch, org B
+reads zero of org A's rows) becomes writable once mutations exist. That is the
+test that actually proves tenancy; the lint rule only proves shape.
 
 ---
 
@@ -139,10 +184,18 @@ intentionally diverge, so every diff would be an expected diff, and a baseline
 that always fails is ignored within two weeks. The prototype stays for manual
 side-by-side.
 
-**Business decisions taken:** pricing $49 / $149 / $399 / Enterprise; cold
-outbound to apparel brands for first users; full master-prompt scope; no
-deadline. **Ownership was recorded as DBAI-owned over a stated answer of "product
-for the custm.ink client"** — see surprise #4.
+**Business decisions taken:** pricing $49 / $149 / $399 / Enterprise; full
+master-prompt scope; no deadline. **Ownership was recorded as DBAI-owned over a
+stated answer of "product for the custm.ink client"** — see surprise #4.
+
+**"Cold outbound to apparel brands" has been superseded.** It was the answer
+given in the build session, and the 2026-09-05 amendment replaces it with an
+**Exora Ink pilot** — an existing DBAI client moving from decorating SanMar
+blanks to original cut-and-sew, with a named contact. That is a better first
+customer than cold outreach for the reason the amendment gives: a real garment
+produces a real factory response, and the outbound demo falls out of the pilot
+rather than having to precede it. The reversal arrived as a file in the repo
+rather than in conversation, so **confirm it before acting on it.**
 
 ---
 
@@ -173,9 +226,11 @@ the allowlist holds one row (the operator), and
 `custm-ink` as one of four first-party DBAI entities. It is a self-owned
 pre-revenue brand. The only real operating apparel business in the tree is
 **Exora Ink** (`/Users/aiserver/Code/exora-ink-orders`, live at exoraops.app,
-five named staff) — a separate entity, and the obvious source of production-side
-feedback if cold outbound stalls. **Confirm ownership before building anything
-that assumes a paying client.**
+five named staff) — a separate entity. **As of the 2026-09-05 amendment Exora is
+the designated pilot**, org #1 once Clerk is wired, and on preview with a dev
+session until then. **Confirm ownership before building anything that assumes a
+paying client**, and note that Exora being the pilot does not change who owns
+Custm.ink Studio.
 
 **5. The lint plugin found five real authorization gaps on its first run.**
 `getLibrary`, `getWorkflow`, `getColorways`, `getBomRows`, and `getMeasurements`
@@ -225,6 +280,15 @@ approach crashes with "Converting circular structure to JSON". Import
 
 **11. `typedRoutes` is off on purpose.** With it on, every dynamic
 `` `/products/${id}/overview` `` href needs a `Route` cast. Not worth it.
+
+**12. A scope amendment arrived in the repo between sessions.** `research/`
+appeared untracked on 2026-09-05 with a competitive teardown, a gap analysis, a
+six-screen completed-state mockup, and an amendment prompt. It is now committed.
+Nothing in it has been applied to the master prompt, the schema, or the code —
+the session that found it was running `/handoff`, not building. Two of its items
+(`brands`, and `source`/`accepted_at` provenance) are cheap before Phase 2 and
+expensive after, which is why it is item 1 rather than something to fold in
+later.
 
 **Deliberate and load-bearing, so do not "fix" them:**
 - `lib/draft-store.ts` keeps created tech packs in `localStorage`. A Phase 1A

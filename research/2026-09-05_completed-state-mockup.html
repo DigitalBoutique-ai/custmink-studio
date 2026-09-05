@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Custm.ink Studio — completed-state mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f3f4f1; --surface:#ffffff; --ink:#172230; --ink-2:#526070; --ink-3:#8a95a3;
+    --line:#dfe3e7; --line-2:#eef0f2; --primary:#1f3a5f; --primary-2:#e8eef7;
+    --marker:#d94f2b; --marker-2:#fbe9e3; --ok:#2e7d5b; --ok-2:#e3f2ea; --ai:#5b4fcf; --ai-2:#ecebfa;
+    --warn:#b7791f; --warn-2:#fbf1dc; --radius:10px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:#e6e8e4;color:var(--ink);font-family:"Instrument Sans",system-ui,sans-serif;font-size:14px;line-height:1.45}
+  button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+  a{color:inherit;text-decoration:none}
+  table{border-collapse:collapse;width:100%}
+  kbd{font:inherit}
+
+  /* ---------- mockup chrome (not app UI) ---------- */
+  #mocktool{display:flex;gap:6px;align-items:center;padding:10px 16px;background:#172230;color:#c9d1dc;position:sticky;top:0;z-index:20}
+  #mocktool .title{font-weight:600;color:#fff;margin-right:14px}
+  #mocktool .pill{padding:6px 12px;border-radius:999px;border:1px solid #33425a;color:#c9d1dc}
+  #mocktool .pill:hover{background:#243349}
+  #mocktool .pill.active{background:#fff;color:#172230;border-color:#fff}
+  #mocktool .note{margin-left:auto;color:#8a95a3;font-size:12px}
+  #mocktool .pill:focus-visible,#studio button:focus-visible,#studio a:focus-visible{outline:2px solid var(--marker);outline-offset:2px}
+
+  /* ---------- app shell ---------- */
+  #studio{max-width:1440px;margin:18px auto 40px;background:var(--paper);border:1px solid #d3d7d1;border-radius:14px;overflow:hidden;box-shadow:0 20px 60px rgba(23,34,48,.12)}
+  #studio .screen{display:none}
+  #studio .screen.active{display:block}
+  #studio .frame{display:grid;grid-template-columns:232px 1fr;min-height:860px}
+  #studio .frame.portal,#studio .frame.print{grid-template-columns:1fr}
+
+  /* sidebar */
+  #studio .sidebar{background:var(--surface);border-right:1px solid var(--line);display:flex;flex-direction:column;padding:14px 12px}
+  #studio .sidebar .brandswitch{display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--line);border-radius:var(--radius);background:var(--paper)}
+  #studio .sidebar .brandswitch .mark{width:30px;height:30px;border-radius:8px;background:var(--primary);display:grid;place-items:center;color:#fff;font-weight:700;font-size:12px}
+  #studio .sidebar .brandswitch .copy{line-height:1.2;flex:1}
+  #studio .sidebar .brandswitch .copy strong{display:block;font-size:13px}
+  #studio .sidebar .brandswitch .copy span{font-size:12px;color:var(--ink-3)}
+  #studio .sidebar .brandswitch .chev{color:var(--ink-3)}
+  #studio .sidebar .brands{margin:8px 0 6px;padding:4px 0;border-bottom:1px solid var(--line-2)}
+  #studio .sidebar .brands .item{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:8px;font-size:13px;color:var(--ink-2)}
+  #studio .sidebar .brands .item.active{background:var(--primary-2);color:var(--primary);font-weight:600}
+  #studio .sidebar .brands .item i{width:8px;height:8px;border-radius:50%;background:currentColor;opacity:.5}
+  #studio .sidebar .brands .item small{margin-left:auto;color:var(--ink-3);font-size:11px}
+  #studio .sidebar .group{margin-top:12px}
+  #studio .sidebar .group p{margin:0 0 4px 10px;font-size:11px;color:var(--ink-3);letter-spacing:.02em}
+  #studio .sidebar .nav{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:8px;color:var(--ink-2);font-size:13.5px}
+  #studio .sidebar .nav:hover{background:var(--paper)}
+  #studio .sidebar .nav.active{background:var(--ink);color:#fff}
+  #studio .sidebar .nav svg{width:16px;height:16px;flex:none}
+  #studio .sidebar .nav .badge{margin-left:auto;font-size:11px;padding:1px 7px;border-radius:999px;background:var(--marker-2);color:var(--marker);font-weight:600}
+  #studio .sidebar .foot{margin-top:auto;padding-top:10px;border-top:1px solid var(--line-2);display:flex;align-items:center;gap:10px;font-size:13px}
+  #studio .sidebar .foot .avatar{width:30px;height:30px;border-radius:50%;background:#d9d0bf;color:var(--ink);display:grid;place-items:center;font-weight:600;font-size:12px}
+  #studio .sidebar .foot small{display:block;color:var(--ink-3);font-size:11.5px}
+
+  /* topbar + main */
+  #studio .main{display:flex;flex-direction:column;min-width:0}
+  #studio .topbar{display:flex;align-items:center;gap:12px;padding:12px 22px;background:var(--surface);border-bottom:1px solid var(--line)}
+  #studio .topbar .search{flex:1;max-width:460px;display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;color:var(--ink-3);background:var(--paper)}
+  #studio .topbar .search kbd{margin-left:auto;font-size:11px;border:1px solid var(--line);border-radius:5px;padding:1px 6px;background:#fff}
+  #studio .topbar .actions{margin-left:auto;display:flex;gap:8px;align-items:center}
+  #studio .btn{display:inline-flex;align-items:center;gap:7px;padding:8px 13px;border-radius:8px;border:1px solid var(--line);background:var(--surface);font-weight:500;font-size:13px;white-space:nowrap}
+  #studio .btn:hover{background:var(--paper)}
+  #studio .btn.primary{background:var(--primary);color:#fff;border-color:var(--primary)}
+  #studio .btn.primary:hover{background:#183050}
+  #studio .btn.ai{color:var(--ai);border-color:#cfcbf0;background:var(--ai-2)}
+  #studio .btn.sm{padding:5px 10px;font-size:12.5px}
+  #studio .btn svg{width:15px;height:15px}
+  #studio .content{padding:22px 26px 40px}
+  #studio h1{font-size:24px;font-weight:600;margin:0;letter-spacing:-.01em}
+  #studio h2{font-size:16px;font-weight:600;margin:0}
+  #studio h3{font-size:14px;font-weight:600;margin:0}
+  #studio .muted{color:var(--ink-2)}
+  #studio .tiny{font-size:12px;color:var(--ink-3)}
+  #studio .num{font-variant-numeric:tabular-nums}
+
+  /* cards & tables */
+  #studio .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius)}
+  #studio .card .head{display:flex;align-items:flex-start;gap:12px;padding:16px 18px;border-bottom:1px solid var(--line-2)}
+  #studio .card .head .grow{flex:1}
+  #studio .card .head p{margin:2px 0 0;color:var(--ink-2);font-size:13px}
+  #studio .card .body{padding:16px 18px}
+  #studio .table th{font-weight:600;font-size:12px;color:var(--ink-2);text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);background:#fafbf9}
+  #studio .table td{padding:8px 12px;border-bottom:1px solid var(--line-2);vertical-align:middle;font-size:13.5px}
+  #studio .table td.n,#studio .table th.n{text-align:right;font-variant-numeric:tabular-nums}
+  #studio .table tr:last-child td{border-bottom:0}
+  #studio .cell{display:inline-block;min-width:52px;padding:4px 8px;border:1px solid transparent;border-radius:6px;text-align:right;font-variant-numeric:tabular-nums}
+  #studio .cell.base{background:var(--primary-2);border-color:#cfdbec;font-weight:600}
+  #studio .cell.override{border-color:var(--warn);background:var(--warn-2)}
+  #studio .cell.bad{border-color:var(--marker);background:var(--marker-2);color:#9a3417;font-weight:600}
+  #studio .tag{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--ink-2);background:#fff}
+  #studio .tag.ok{background:var(--ok-2);color:var(--ok);border-color:#bfe2cf}
+  #studio .tag.warn{background:var(--warn-2);color:var(--warn);border-color:#ecd9ad}
+  #studio .tag.bad{background:var(--marker-2);color:var(--marker);border-color:#f2c4b5}
+  #studio .tag.ai{background:var(--ai-2);color:var(--ai);border-color:#cfcbf0}
+  #studio .tag.ink{background:var(--ink);color:#fff;border-color:var(--ink)}
+  #studio .dot{width:8px;height:8px;border-radius:50%;background:currentColor;display:inline-block}
+
+  /* dashboard */
+  #studio .dash .heading{display:flex;align-items:flex-end;gap:16px;margin-bottom:18px}
+  #studio .dash .heading .grow{flex:1}
+  #studio .dash .heading .date{color:var(--ink-3);font-size:13px;margin-bottom:4px}
+  #studio .dash .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+  #studio .dash .metric{padding:14px 16px}
+  #studio .dash .metric p{margin:0;color:var(--ink-2);font-size:13px}
+  #studio .dash .metric strong{display:block;font-size:26px;font-weight:600;margin:4px 0 2px;letter-spacing:-.02em}
+  #studio .dash .metric small{color:var(--ink-3)}
+  #studio .dash .grid{display:grid;grid-template-columns:1.7fr 1fr;gap:12px}
+  #studio .dash .rows .row{display:grid;grid-template-columns:36px 1.5fr 1fr 110px 130px 90px;gap:12px;align-items:center;padding:11px 18px;border-bottom:1px solid var(--line-2)}
+  #studio .dash .rows .row:last-child{border-bottom:0}
+  #studio .dash .rows .thumb{width:32px;height:32px;border-radius:7px;display:grid;place-items:center}
+  #studio .dash .rows .thumb svg{width:18px;height:18px}
+  #studio .dash .rows strong{display:block;font-weight:600;font-size:13.5px}
+  #studio .dash .rows small{color:var(--ink-3)}
+  #studio .dash .bar{height:6px;border-radius:999px;background:var(--line);overflow:hidden}
+  #studio .dash .bar i{display:block;height:100%;background:var(--primary)}
+  #studio .dash .feed li{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--line-2);font-size:13px}
+  #studio .dash .feed li:last-child{border-bottom:0}
+  #studio .dash .feed ul{list-style:none;margin:0;padding:0}
+  #studio .dash .feed .who{width:26px;height:26px;border-radius:50%;background:var(--paper);display:grid;place-items:center;font-size:11px;font-weight:600;flex:none;border:1px solid var(--line)}
+  #studio .dash .feed .who.ext{background:var(--marker-2);color:var(--marker);border-color:#f2c4b5}
+  #studio .dash .feed .who.api{background:var(--ink);color:#fff}
+  #studio .dash .feed time{display:block;color:var(--ink-3);font-size:11.5px}
+
+  /* style workspace */
+  #studio .ws .header{display:flex;align-items:center;gap:14px;padding:14px 26px;background:var(--surface);border-bottom:1px solid var(--line)}
+  #studio .ws .header .crumbs{font-size:12px;color:var(--ink-3)}
+  #studio .ws .header .crumbs b{color:var(--ink-2);font-weight:500}
+  #studio .ws .header .actions{margin-left:auto;display:flex;gap:8px;align-items:center}
+  #studio .ws .header .saved{font-size:12.5px;color:var(--ok);display:flex;align-items:center;gap:5px;margin-right:6px}
+  #studio .ws .body{display:grid;grid-template-columns:220px 1fr;gap:0}
+  #studio .ws .toc{padding:18px 14px;border-right:1px solid var(--line);background:#fbfbf9}
+  #studio .ws .toc .ready{padding:12px;border-radius:var(--radius);background:var(--surface);border:1px solid var(--line);margin-bottom:14px}
+  #studio .ws .toc .ready .top{display:flex;justify-content:space-between;font-size:12.5px;color:var(--ink-2)}
+  #studio .ws .toc .ready strong{font-size:18px;color:var(--ink)}
+  #studio .ws .toc .ready .bar{height:6px;border-radius:999px;background:var(--line);margin:8px 0 6px;overflow:hidden}
+  #studio .ws .toc .ready .bar i{display:block;height:100%;width:91%;background:var(--ok)}
+  #studio .ws .toc .ready small{color:var(--ink-3);font-size:11.5px}
+  #studio .ws .toc .sec{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;font-size:13px;color:var(--ink-2)}
+  #studio .ws .toc .sec.active{background:var(--ink);color:#fff}
+  #studio .ws .toc .sec .st{margin-left:auto;width:14px;height:14px;border-radius:50%;border:1.5px solid currentColor;opacity:.5;display:grid;place-items:center}
+  #studio .ws .toc .sec .st.done{background:var(--ok);border-color:var(--ok);opacity:1;color:#fff}
+  #studio .ws .toc .sec .st.done::after{content:"";width:5px;height:3px;border-left:1.5px solid #fff;border-bottom:1.5px solid #fff;transform:rotate(-45deg) translate(1px,-1px)}
+  #studio .ws .toc .sec .cnt{margin-left:auto;font-size:11px;padding:0 6px;border-radius:999px;background:var(--marker-2);color:var(--marker);font-weight:600}
+  #studio .ws .toc .share{margin-top:14px;padding:12px;border-radius:var(--radius);border:1px dashed #c5cbd2;font-size:12.5px}
+  #studio .ws .toc .share strong{display:block;margin-bottom:2px}
+  #studio .ws .toc .share p{margin:0 0 8px;color:var(--ink-2)}
+  #studio .ws .toc .share .factories{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
+  #studio .ws .toc .share .factories span{display:flex;align-items:center;gap:6px;color:var(--ink-2)}
+  #studio .ws .pane{padding:20px 26px 40px;display:flex;flex-direction:column;gap:14px}
+  #studio .ws .pane .heading{display:flex;align-items:flex-end;gap:12px}
+  #studio .ws .pane .heading .grow{flex:1}
+  #studio .ws .pane .heading .eyebrow{font-size:12px;color:var(--ink-3);margin-bottom:2px}
+
+  /* flats + callouts */
+  #studio .flats{display:grid;grid-template-columns:1.2fr 1fr;gap:0}
+  #studio .flats .stage{padding:18px;border-right:1px solid var(--line-2);background:#fafbf9;position:relative;display:grid;place-items:center}
+  #studio .flats .stage svg{width:100%;max-width:360px;height:auto}
+  #studio .flats .stage .mk{position:absolute;width:22px;height:22px;border-radius:50%;background:var(--marker);color:#fff;font-size:11.5px;font-weight:700;display:grid;place-items:center;box-shadow:0 0 0 3px #fff}
+  #studio .flats .list{padding:8px 0}
+  #studio .flats .list .item{display:grid;grid-template-columns:24px 1fr auto;gap:10px;align-items:start;padding:9px 16px;border-bottom:1px solid var(--line-2);font-size:13px}
+  #studio .flats .list .item:last-child{border-bottom:0}
+  #studio .flats .list .item .n{width:20px;height:20px;border-radius:50%;background:var(--marker);color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center}
+  #studio .flats .list .item small{display:block;color:var(--ink-3)}
+
+  /* measurement table extras */
+  #studio .legend{display:flex;gap:14px;font-size:12px;color:var(--ink-2);align-items:center}
+  #studio .legend i{width:12px;height:12px;border-radius:3px;display:inline-block;vertical-align:-1px;margin-right:5px;border:1px solid transparent}
+  #studio .legend .lb{background:var(--primary-2);border-color:#cfdbec}
+  #studio .legend .lo{background:var(--warn-2);border-color:var(--warn)}
+  #studio .legend .lx{background:var(--marker-2);border-color:var(--marker)}
+  #studio .comment-pin{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;background:var(--marker-2);color:var(--marker);font-size:10.5px;font-weight:700;margin-left:6px;vertical-align:-3px}
+  #studio .thread{margin:0 18px 16px;border:1px solid var(--line);border-radius:var(--radius);background:#fbfbf9}
+  #studio .thread .msg{display:flex;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line-2);font-size:13px}
+  #studio .thread .msg:last-of-type{border-bottom:0}
+  #studio .thread .who{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:600;flex:none;background:var(--paper);border:1px solid var(--line)}
+  #studio .thread .who.ext{background:var(--marker-2);color:var(--marker);border-color:#f2c4b5}
+  #studio .thread .msg strong{font-weight:600}
+  #studio .thread .msg .meta{color:var(--ink-3);font-size:11.5px;margin-left:6px}
+  #studio .thread .msg p{margin:3px 0 0;color:var(--ink)}
+  #studio .thread .reply{display:flex;gap:8px;padding:10px 14px;border-top:1px solid var(--line-2)}
+  #studio .thread .reply input{flex:1;padding:7px 10px;border:1px solid var(--line);border-radius:7px;font:inherit;background:#fff}
+
+  /* versions */
+  #studio .versions{display:grid;grid-template-columns:300px 1fr;gap:14px}
+  #studio .versions .vlist .v{display:flex;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line-2);align-items:flex-start}
+  #studio .versions .vlist .v:last-child{border-bottom:0}
+  #studio .versions .vlist .v.sel{background:var(--primary-2)}
+  #studio .versions .vlist .v .vn{width:36px;height:36px;border-radius:8px;background:var(--ink);color:#fff;display:grid;place-items:center;font-weight:700;font-size:12.5px;flex:none}
+  #studio .versions .vlist .v .vn.draft{background:#fff;border:1px dashed #b7bec7;color:var(--ink-2)}
+  #studio .versions .vlist .v strong{display:block;font-size:13.5px}
+  #studio .versions .vlist .v small{color:var(--ink-3);display:block;font-size:12px}
+  #studio .diff .sec{padding:12px 18px;border-bottom:1px solid var(--line-2)}
+  #studio .diff .sec:last-child{border-bottom:0}
+  #studio .diff .sec h3{margin-bottom:8px;display:flex;align-items:center;gap:8px}
+  #studio .diff .sec h3 .tag{font-weight:600}
+  #studio .diff .chg{display:grid;grid-template-columns:120px 1fr 1fr;gap:10px;padding:6px 0;font-size:13px;border-top:1px dashed var(--line-2)}
+  #studio .diff .chg:first-of-type{border-top:0}
+  #studio .diff .old{color:var(--ink-3);text-decoration:line-through}
+  #studio .diff .new{font-weight:600}
+  #studio .diff .add{color:var(--ok);font-weight:600}
+  #studio .diff .del{color:var(--marker);font-weight:600}
+
+  /* supplier portal */
+  #studio .portal .bar{display:flex;align-items:center;gap:14px;padding:12px 26px;background:var(--ink);color:#fff}
+  #studio .portal .bar .who{margin-left:auto;display:flex;align-items:center;gap:10px;font-size:13px;color:#c9d1dc}
+  #studio .portal .bar .who b{color:#fff;font-weight:600}
+  #studio .portal .banner{display:flex;align-items:center;gap:10px;padding:10px 26px;background:var(--warn-2);color:#6b4a0e;font-size:13px;border-bottom:1px solid #ecd9ad}
+  #studio .portal .wrap{padding:22px 26px 40px;display:grid;grid-template-columns:1fr 320px;gap:14px}
+  #studio .portal .stack{display:flex;flex-direction:column;gap:14px;min-width:0}
+  #studio .portal .side{display:flex;flex-direction:column;gap:14px}
+  #studio .portal .locked{color:var(--ink-3);font-style:italic}
+
+  /* developers */
+  #studio .dev{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  #studio .dev .span{grid-column:1/-1}
+  #studio code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;background:var(--paper);padding:2px 6px;border-radius:5px;border:1px solid var(--line-2)}
+  #studio pre{margin:0;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;line-height:1.55;background:#172230;color:#dfe6ef;padding:14px 16px;border-radius:8px;overflow:auto}
+  #studio .kv{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:13px}
+  #studio .kv dt{color:var(--ink-3)}
+  #studio .kv dd{margin:0}
+  #studio .switch{width:34px;height:20px;border-radius:999px;background:var(--ok);position:relative;display:inline-block;vertical-align:middle}
+  #studio .switch::after{content:"";position:absolute;top:2px;right:2px;width:16px;height:16px;border-radius:50%;background:#fff}
+  #studio .switch.off{background:var(--line)}
+  #studio .switch.off::after{right:auto;left:2px}
+
+  /* print preview */
+  #studio .print .toolbar{display:flex;align-items:center;gap:10px;padding:12px 26px;background:var(--surface);border-bottom:1px solid var(--line)}
+  #studio .print .toolbar .grow{flex:1}
+  #studio .print .canvas{padding:26px;display:grid;gap:22px;justify-items:center;background:#d9dcd6}
+  #studio .page{width:1000px;height:707px;background:#fff;box-shadow:0 10px 30px rgba(0,0,0,.15);padding:34px 40px;display:flex;flex-direction:column;color:#111;font-size:12.5px}
+  #studio .page .ph{display:flex;align-items:center;gap:16px;border-bottom:2px solid #111;padding-bottom:10px;margin-bottom:16px}
+  #studio .page .ph .logo{font-weight:700;font-size:16px;letter-spacing:-.01em}
+  #studio .page .ph .meta{margin-left:auto;text-align:right;font-size:12px;color:#444;line-height:1.35}
+  #studio .page .ph .meta b{color:#111}
+  #studio .page .pf{margin-top:auto;display:flex;justify-content:space-between;border-top:1px solid #bbb;padding-top:8px;font-size:11px;color:#555}
+  #studio .page .grid{display:grid;grid-template-columns:1.1fr 1fr;gap:26px;flex:1;min-height:0}
+  #studio .page .ptable th{background:#f2f2f2;border:1px solid #999;padding:5px 7px;font-size:11.5px;text-align:left}
+  #studio .page .ptable td{border:1px solid #999;padding:5px 7px;font-size:11.5px}
+  #studio .page .ptable td.n{text-align:right;font-variant-numeric:tabular-nums}
+  #studio .page .pmk{display:inline-grid;place-items:center;width:16px;height:16px;border-radius:50%;background:#111;color:#fff;font-size:9.5px;font-weight:700}
+  #studio .page h4{margin:0 0 8px;font-size:13px;text-transform:none}
+
+  @media (max-width:1000px){
+    #studio .frame{grid-template-columns:1fr}
+    #studio .sidebar{display:none}
+    #studio .dash .metrics,#studio .dash .grid,#studio .versions,#studio .dev,#studio .portal .wrap,#studio .flats{grid-template-columns:1fr}
+    #studio .ws .body{grid-template-columns:1fr}
+    #studio .page{width:100%;height:auto}
+  }
+  @media (prefers-reduced-motion:no-preference){
+    #studio .screen.active{animation:fade .18s ease-out}
+    @keyframes fade{from{opacity:0}to{opacity:1}}
+  }
+</style>
+</head>
+<body>
+
+<div id="mocktool" role="tablist" aria-label="Mockup screens">
+  <span class="title">Custm.ink Studio — completed state</span>
+  <button class="pill active" role="tab" data-target="dashboard">Dashboard</button>
+  <button class="pill" role="tab" data-target="workspace">Style workspace</button>
+  <button class="pill" role="tab" data-target="versions">Versions &amp; diff</button>
+  <button class="pill" role="tab" data-target="portal">Factory portal</button>
+  <button class="pill" role="tab" data-target="developers">Developers</button>
+  <button class="pill" role="tab" data-target="print">Factory PDF</button>
+  <span class="note">Mockup · sample data · Riviera Oversized Hoodie CI-HOD-2407</span>
+</div>
+
+<div id="studio">
+
+<!-- ======================================================= DASHBOARD -->
+<section class="screen active" data-screen="dashboard">
+<div class="frame">
+  <aside class="sidebar">
+    <div class="brandswitch">
+      <span class="mark">CI</span>
+      <span class="copy"><strong>Custm.ink Studio</strong><span>Agency workspace · 3 brands</span></span>
+      <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m7 15 5 5 5-5M7 9l5-5 5 5"/></svg>
+    </div>
+    <div class="brands">
+      <a class="item active" href="#"><i></i>Custm.ink House<small>12</small></a>
+      <a class="item" href="#"><i></i>Riviera Resort Co.<small>8</small></a>
+      <a class="item" href="#"><i></i>Northshore Athletics<small>5</small></a>
+    </div>
+    <div class="group"><p>Workspace</p>
+      <a class="nav active" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>Dashboard</a>
+      <a class="nav" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.4 3.5 16 2a4 4 0 0 1-8 0L3.6 3.5 2.3 5.7l.6 3.5H6v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V10h3.1l.6-3.5z"/></svg>Styles<span class="badge">2</span></a>
+      <a class="nav" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-8l-2-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2Z"/></svg>Seasons</a>
+    </div>
+    <div class="group"><p>Libraries</p>
+      <a class="nav" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="5" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/></svg>Sketches</a>
+      <a class="nav" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 2 10 5-10 5L2 7z"/><path d="m2 12 10 5 10-5M2 17l10 5 10-5"/></svg>Materials &amp; trims</a>
+      <a class="nav" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M15 3v18"/></svg>Points of measure</a>
+      <a class="nav" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 17a4 4 0 0 1-8 0V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2Z"/><path d="M16.7 13H19a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2H7"/></svg>Colors</a>
+      <a class="nav" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>Size ranges</a>
+    </div>
+    <div class="group"><p>Operations</p>
+      <a class="nav" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2M15 18H9M19 18h2a1 1 0 0 0 1-1v-3.7l-3.5-4.3H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg>Factories</a>
+      <a class="nav" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8M3 3v5h5M12 7v5l4 2"/></svg>Activity</a>
+      <a class="nav" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m16 18 6-6-6-6M8 6l-6 6 6 6"/></svg>Developers</a>
+    </div>
+    <div class="foot"><span class="avatar">JD</span><span><strong>James</strong><small>Owner · Custm.ink Studio</small></span></div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Search styles, codes, materials across brands<kbd>⌘K</kbd></div>
+      <div class="actions">
+        <button class="btn ai"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 17l.7 2.3L22 20l-2.3.7L19 23l-.7-2.3L16 20l2.3-.7z"/></svg>Ask Studio AI</button>
+        <button class="btn primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5v14"/></svg>New style</button>
+      </div>
+    </div>
+
+    <div class="content dash">
+      <div class="heading">
+        <div class="grow"><div class="date">Saturday, September 5</div><h1>Two factories are waiting on you.</h1><p class="muted" style="margin:4px 0 0">Northstar left 3 comments on the Riviera Hoodie v4 spec. Harbor Tee is ready to publish.</p></div>
+        <button class="btn">Weekly digest</button>
+      </div>
+
+      <div class="metrics">
+        <div class="card metric"><p>Styles in development</p><strong class="num">25</strong><small>across 3 brands</small></div>
+        <div class="card metric"><p>Published this week</p><strong class="num">6</strong><small>4 sent to factories</small></div>
+        <div class="card metric"><p>Open factory comments</p><strong class="num" style="color:var(--marker)">7</strong><small>3 on Riviera Hoodie</small></div>
+        <div class="card metric"><p>API calls, 24h</p><strong class="num">1,284</strong><small>n8n · Shopify sync</small></div>
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <div class="head"><div class="grow"><h2>Styles needing attention</h2><p>Sorted by what blocks a factory.</p></div><a class="btn sm" href="#">All styles</a></div>
+          <div class="rows">
+            <div class="row"><span class="thumb" style="background:#e3ebf8;color:#4a6fa8"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.4 3.5 16 2a4 4 0 0 1-8 0L3.6 3.5 2.3 5.7l.6 3.5H6v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V10h3.1l.6-3.5z"/></svg></span><div><strong>Riviera Oversized Hoodie</strong><small>CI-HOD-2407 · Custm.ink House · FW27</small></div><div><span class="tag bad"><span class="dot"></span>3 comments</span></div><div><span class="tag">v4 shared</span></div><div><div class="bar"><i style="width:91%"></i></div></div><small>8 min ago</small></div>
+            <div class="row"><span class="thumb" style="background:#f0ece3;color:#8a7a55"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.4 3.5 16 2a4 4 0 0 1-8 0L3.6 3.5 2.3 5.7l.6 3.5H6v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V10h3.1l.6-3.5z"/></svg></span><div><strong>Harbor Heavyweight Tee</strong><small>CI-TEE-2411 · Custm.ink House · SS27</small></div><div><span class="tag ok"><span class="dot"></span>Ready to publish</span></div><div><span class="tag">draft</span></div><div><div class="bar"><i style="width:100%"></i></div></div><small>Yesterday</small></div>
+            <div class="row"><span class="thumb" style="background:#e6efe9;color:#2e7d5b"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.4 3.5 16 2a4 4 0 0 1-8 0L3.6 3.5 2.3 5.7l.6 3.5H6v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V10h3.1l.6-3.5z"/></svg></span><div><strong>Cabana Camp Shirt</strong><small>RR-SHT-0312 · Riviera Resort Co. · Resort27</small></div><div><span class="tag warn"><span class="dot"></span>Fit sample out of tol.</span></div><div><span class="tag">v2 shared</span></div><div><div class="bar"><i style="width:74%"></i></div></div><small>2 days ago</small></div>
+            <div class="row"><span class="thumb" style="background:#e9e9ee;color:#303b3c"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.4 3.5 16 2a4 4 0 0 1-8 0L3.6 3.5 2.3 5.7l.6 3.5H6v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V10h3.1l.6-3.5z"/></svg></span><div><strong>Atlas Tapered Jogger</strong><small>CI-JOG-2398 · Custm.ink House · Core</small></div><div><span class="tag ok"><span class="dot"></span>Approved</span></div><div><span class="tag ink">v6</span></div><div><div class="bar"><i style="width:100%"></i></div></div><small>Aug 27</small></div>
+            <div class="row"><span class="thumb" style="background:#fbe9e3;color:#d94f2b"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.4 3.5 16 2a4 4 0 0 1-8 0L3.6 3.5 2.3 5.7l.6 3.5H6v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V10h3.1l.6-3.5z"/></svg></span><div><strong>Northshore Training Tee</strong><small>NS-TEE-0107 · Northshore Athletics · created via API</small></div><div><span class="tag ai"><span class="dot"></span>AI draft · 14 rows to review</span></div><div><span class="tag">draft</span></div><div><div class="bar"><i style="width:38%"></i></div></div><small>1 hr ago</small></div>
+          </div>
+        </div>
+
+        <div class="card feed">
+          <div class="head"><div class="grow"><h2>Activity</h2><p>People, factories and integrations.</p></div></div>
+          <div class="body" style="padding-top:4px">
+            <ul>
+              <li><span class="who ext">NS</span><div><b>Mei Lin · Northstar Apparel</b> commented on P01 chest width, Riviera Hoodie v4<time>8 min ago</time></div></li>
+              <li><span class="who api">API</span><div><b>n8n · Shopify sync</b> created NS-TEE-0107 and 14 BOM rows<time>1 hr ago</time></div></li>
+              <li><span class="who">TD</span><div><b>Tim</b> published Riviera Hoodie <b>v4</b> — "grade rule confirmed, care label added"<time>Yesterday</time></div></li>
+              <li><span class="who api">→</span><div>Webhook <code>style.published</code> delivered to n8n (200, 412 ms)<time>Yesterday</time></div></li>
+              <li><span class="who ext">VT</span><div><b>Viet Tex · Da Nang</b> downloaded Cabana Camp Shirt v2 PDF + XLSX<time>2 days ago</time></div></li>
+              <li><span class="who">JD</span><div><b>James</b> added 3 trims to Materials from Excel import<time>2 days ago</time></div></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ======================================================= STYLE WORKSPACE -->
+<section class="screen" data-screen="workspace">
+<div class="frame">
+  <aside class="sidebar">
+    <div class="brandswitch"><span class="mark">CI</span><span class="copy"><strong>Custm.ink House</strong><span>Brand · Custm.ink Studio</span></span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m7 15 5 5 5-5M7 9l5-5 5 5"/></svg></div>
+    <div class="group"><p>Workspace</p>
+      <a class="nav" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>Dashboard</a>
+      <a class="nav active" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.4 3.5 16 2a4 4 0 0 1-8 0L3.6 3.5 2.3 5.7l.6 3.5H6v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V10h3.1l.6-3.5z"/></svg>Styles</a>
+      <a class="nav" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-8l-2-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2Z"/></svg>Seasons</a>
+    </div>
+    <div class="group"><p>Libraries</p>
+      <a class="nav" href="#">Sketches</a><a class="nav" href="#">Materials &amp; trims</a><a class="nav" href="#">Points of measure</a><a class="nav" href="#">Colors</a><a class="nav" href="#">Size ranges</a>
+    </div>
+    <div class="group"><p>Operations</p><a class="nav" href="#">Factories</a><a class="nav" href="#">Activity</a><a class="nav" href="#">Developers</a></div>
+    <div class="foot"><span class="avatar">JD</span><span><strong>James</strong><small>Owner</small></span></div>
+  </aside>
+
+  <div class="main ws">
+    <div class="header">
+      <div>
+        <div class="crumbs">Styles › Hoodies › <b>Custm.ink House</b></div>
+        <h1 style="font-size:20px">Riviera Oversized Hoodie <span class="tiny" style="font-weight:400">CI-HOD-2407 · FW27</span></h1>
+      </div>
+      <span class="tag">Sampling</span>
+      <div class="actions">
+        <span class="saved"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>Saved · draft v5</span>
+        <button class="btn">Share v4</button>
+        <button class="btn">Export</button>
+        <button class="btn ai">Studio AI</button>
+        <button class="btn primary">Publish v5</button>
+      </div>
+    </div>
+
+    <div class="body">
+      <aside class="toc">
+        <div class="ready"><div class="top"><span>Ready for factory</span><strong>91%</strong></div><div class="bar"><i></i></div><small>Construction needs 2 callouts · Packaging needs a hangtag</small></div>
+        <a class="sec" href="#">Overview<span class="st done"></span></a>
+        <a class="sec" href="#">Sketches &amp; callouts<span class="st done"></span></a>
+        <a class="sec" href="#">Colorways<span class="st done"></span></a>
+        <a class="sec" href="#">Bill of materials<span class="st done"></span></a>
+        <a class="sec" href="#">Artwork<span class="st done"></span></a>
+        <a class="sec active" href="#">Measurements<span class="cnt">3</span></a>
+        <a class="sec" href="#">Samples &amp; fit<span class="st done"></span></a>
+        <a class="sec" href="#">Construction<span class="st"></span></a>
+        <a class="sec" href="#">Packaging &amp; labels<span class="st"></span></a>
+        <a class="sec" href="#">Versions<span class="st done"></span></a>
+        <div class="share">
+          <strong>Shared with factories</strong>
+          <p>Factories see <b>v4</b>, published yesterday — never this draft.</p>
+          <div class="factories">
+            <span><i class="dot" style="color:var(--ok)"></i>Northstar Apparel · can comment</span>
+            <span><i class="dot" style="color:var(--ink-3)"></i>Viet Tex · view only</span>
+          </div>
+          <button class="btn sm">Manage access</button>
+        </div>
+      </aside>
+
+      <div class="pane">
+        <div class="heading">
+          <div class="grow"><div class="eyebrow">Measurements</div><h2>Graded spec — 5 sizes, base M, centimeters</h2></div>
+          <div class="legend"><span><i class="lb"></i>Base size</span><span><i class="lo"></i>Manual override</span><span><i class="lx"></i>Fit sample out of tolerance</span></div>
+        </div>
+
+        <div class="card">
+          <div class="head">
+            <div class="grow"><h3>Points of measure</h3><p>Grade rules fill sizes from M. Edit a cell to override it; the increment stays.</p></div>
+            <button class="btn sm">Add from library</button>
+            <button class="btn sm">Grade from M</button>
+            <button class="btn sm ai">Check grading</button>
+          </div>
+          <table class="table">
+            <thead><tr><th>POM</th><th>Description</th><th class="n">Tol −</th><th class="n">Tol +</th><th class="n">Grade</th><th class="n">XS</th><th class="n">S</th><th class="n">M</th><th class="n">L</th><th class="n">XL</th><th class="n">Fit #2 (M)</th></tr></thead>
+            <tbody>
+              <tr><td><b>A</b></td><td>Chest width, 2.5 cm below armhole <span class="comment-pin" title="1 factory comment">1</span></td><td class="n">0.5</td><td class="n">0.5</td><td class="n">3.0</td><td class="n"><span class="cell">54.0</span></td><td class="n"><span class="cell">57.0</span></td><td class="n"><span class="cell base">60.0</span></td><td class="n"><span class="cell">63.0</span></td><td class="n"><span class="cell">66.0</span></td><td class="n"><span class="cell bad">61.2</span></td></tr>
+              <tr><td><b>B</b></td><td>Body length from HPS</td><td class="n">1.0</td><td class="n">1.0</td><td class="n">2.0</td><td class="n"><span class="cell">66.0</span></td><td class="n"><span class="cell">68.0</span></td><td class="n"><span class="cell base">70.0</span></td><td class="n"><span class="cell">72.0</span></td><td class="n"><span class="cell">74.0</span></td><td class="n"><span class="cell">70.4</span></td></tr>
+              <tr><td><b>C</b></td><td>Sleeve length from shoulder</td><td class="n">0.5</td><td class="n">0.5</td><td class="n">1.0</td><td class="n"><span class="cell">58.0</span></td><td class="n"><span class="cell">59.0</span></td><td class="n"><span class="cell base">60.0</span></td><td class="n"><span class="cell">61.0</span></td><td class="n"><span class="cell override">62.5</span></td><td class="n"><span class="cell">59.8</span></td></tr>
+              <tr><td><b>D</b></td><td>Bottom opening, relaxed</td><td class="n">0.5</td><td class="n">0.5</td><td class="n">3.0</td><td class="n"><span class="cell">48.0</span></td><td class="n"><span class="cell">51.0</span></td><td class="n"><span class="cell base">54.0</span></td><td class="n"><span class="cell">57.0</span></td><td class="n"><span class="cell">60.0</span></td><td class="n"><span class="cell">54.3</span></td></tr>
+              <tr><td><b>E</b></td><td>Hood height</td><td class="n">0.5</td><td class="n">0.5</td><td class="n">0.5</td><td class="n"><span class="cell">36.0</span></td><td class="n"><span class="cell">36.5</span></td><td class="n"><span class="cell base">37.0</span></td><td class="n"><span class="cell">37.5</span></td><td class="n"><span class="cell">38.0</span></td><td class="n"><span class="cell">37.1</span></td></tr>
+              <tr><td><b>F</b></td><td>Kangaroo pocket width</td><td class="n">0.3</td><td class="n">0.3</td><td class="n">1.0</td><td class="n"><span class="cell">28.0</span></td><td class="n"><span class="cell">29.0</span></td><td class="n"><span class="cell base">30.0</span></td><td class="n"><span class="cell">31.0</span></td><td class="n"><span class="cell">32.0</span></td><td class="n"><span class="cell">30.0</span></td></tr>
+            </tbody>
+          </table>
+          <div class="thread" style="margin-top:14px">
+            <div class="msg"><span class="who ext">ML</span><div><strong>Mei Lin</strong><span class="meta">Northstar Apparel · on A · v4 · 8 min ago</span><p>Fit sample #2 measured 61.2 at chest. Loopback relaxes ~1 cm after wash. Keep 60 or move spec to 61?</p></div></div>
+            <div class="msg"><span class="who">TD</span><div><strong>Tim</strong><span class="meta">Custm.ink · 2 min ago</span><p>Keep 60 pre-wash. Add a post-wash target of 61 ± 0.5 in Construction — James, can you add POM A2?</p></div></div>
+            <div class="reply"><input placeholder="Reply to Mei Lin…" aria-label="Reply"><button class="btn sm primary">Reply</button><button class="btn sm">Resolve</button></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="head"><div class="grow"><h3>Flat sketch and callouts</h3><p>Front view. Callouts link to construction and BOM rows.</p></div><button class="btn sm">Add view</button><button class="btn sm ai">Draft callouts from sketch</button></div>
+          <div class="flats">
+            <div class="stage">
+              <svg viewBox="0 0 360 400" role="img" aria-label="Front flat of an oversized hoodie">
+                <g fill="#fff" stroke="#172230" stroke-width="2.2" stroke-linejoin="round">
+                  <path d="M120 70 C130 45 150 35 180 35 C210 35 230 45 240 70 L250 90 L232 100 C236 82 222 65 180 62 C138 65 124 82 128 100 Z"/>
+                  <path d="M128 100 L232 100 L262 112 L328 150 L308 210 L268 195 L268 350 L92 350 L92 195 L52 210 L32 150 L98 112 Z"/>
+                  <path d="M92 195 L52 210 M268 195 L308 210" stroke-width="1.6"/>
+                  <path d="M118 260 L242 260 L250 330 L110 330 Z" stroke-width="1.8"/>
+                  <path d="M92 350 L268 350 L268 372 L92 372 Z" stroke-dasharray="4 3" stroke-width="1.6"/>
+                  <path d="M152 100 L152 118 M208 100 L208 118" stroke-width="1.6"/>
+                  <path d="M180 62 L180 90" stroke-width="1.4" stroke-dasharray="3 3"/>
+                </g>
+              </svg>
+              <span class="mk" style="left:47%;top:15%">1</span>
+              <span class="mk" style="left:12%;top:40%">2</span>
+              <span class="mk" style="left:60%;top:70%">3</span>
+              <span class="mk" style="left:47%;top:92%">4</span>
+            </div>
+            <div class="list">
+              <div class="item"><span class="n">1</span><div>Double-layer hood, self-fabric lining, 10 mm recycled drawcord with metal tips<small>Construction · links BOM row 3</small></div><span class="tag ok">Done</span></div>
+              <div class="item"><span class="n">2</span><div>Dropped shoulder, 1.2 cm coverstitch, 12 SPI<small>Construction</small></div><span class="tag ok">Done</span></div>
+              <div class="item"><span class="n">3</span><div>Kangaroo pocket, bar-tacked at four corners<small>Construction · needs stitch type</small></div><span class="tag warn">Needs input</span></div>
+              <div class="item"><span class="n">4</span><div>2×2 rib hem, 5 cm finished<small>BOM row 2</small></div><span class="tag ok">Done</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ======================================================= VERSIONS -->
+<section class="screen" data-screen="versions">
+<div class="frame">
+  <aside class="sidebar">
+    <div class="brandswitch"><span class="mark">CI</span><span class="copy"><strong>Custm.ink House</strong><span>Brand · Custm.ink Studio</span></span></div>
+    <div class="group"><p>Workspace</p><a class="nav" href="#">Dashboard</a><a class="nav active" href="#">Styles</a><a class="nav" href="#">Seasons</a></div>
+    <div class="group"><p>Libraries</p><a class="nav" href="#">Sketches</a><a class="nav" href="#">Materials &amp; trims</a><a class="nav" href="#">Points of measure</a><a class="nav" href="#">Colors</a><a class="nav" href="#">Size ranges</a></div>
+    <div class="group"><p>Operations</p><a class="nav" href="#">Factories</a><a class="nav" href="#">Activity</a><a class="nav" href="#">Developers</a></div>
+    <div class="foot"><span class="avatar">JD</span><span><strong>James</strong><small>Owner</small></span></div>
+  </aside>
+  <div class="main ws">
+    <div class="header">
+      <div><div class="crumbs">Styles › Hoodies › <b>Custm.ink House</b></div><h1 style="font-size:20px">Riviera Oversized Hoodie <span class="tiny" style="font-weight:400">CI-HOD-2407 · FW27</span></h1></div>
+      <span class="tag">Sampling</span>
+      <div class="actions"><button class="btn">Share v4</button><button class="btn">Export</button><button class="btn primary">Publish v5</button></div>
+    </div>
+    <div class="content">
+      <div class="heading" style="display:flex;align-items:flex-end;margin-bottom:14px"><div style="flex:1"><div class="tiny">Versions</div><h2>What changed between v3 and v4</h2></div><span class="tiny">Published snapshots are immutable. Factories always receive a numbered version.</span></div>
+      <div class="versions">
+        <div class="card vlist">
+          <div class="v"><span class="vn draft">v5</span><div><strong>Draft — editing now</strong><small>6 changes since v4 · James, Tim</small></div></div>
+          <div class="v sel"><span class="vn">v4</span><div><strong>Grade rule confirmed, care label added</strong><small>Tim · Yesterday · shared with Northstar, Viet Tex</small><small>PDF · XLSX · 2 downloads</small></div></div>
+          <div class="v"><span class="vn">v3</span><div><strong>Proto #1 feedback applied</strong><small>Tim · Aug 26</small></div></div>
+          <div class="v"><span class="vn">v2</span><div><strong>Colorways and artwork</strong><small>James · Aug 21</small></div></div>
+          <div class="v"><span class="vn">v1</span><div><strong>First factory package</strong><small>Tim · Aug 18 · via API</small></div></div>
+        </div>
+        <div class="card diff">
+          <div class="sec"><h3>Measurements <span class="tag warn">2 changed</span></h3>
+            <div class="chg"><span>B · XL</span><span class="old">73.0</span><span class="new">74.0</span></div>
+            <div class="chg"><span>C · grade</span><span class="old">0.5</span><span class="new">1.0 <span class="tiny">(overrides cleared on S, L)</span></span></div>
+          </div>
+          <div class="sec"><h3>Bill of materials <span class="tag ok">1 added</span> <span class="tag warn">1 changed</span></h3>
+            <div class="chg"><span class="add">+ Label</span><span></span><span class="new">Printed care label, 100% recycled satin, inside left side seam</span></div>
+            <div class="chg"><span>Trim · drawcord</span><span class="old">Natural cotton, 8 mm</span><span class="new">Recycled polyester, 10 mm, metal tips</span></div>
+          </div>
+          <div class="sec"><h3>Sketches &amp; callouts <span class="tag ok">1 added</span></h3>
+            <div class="chg"><span class="add">+ Callout 4</span><span></span><span class="new">2×2 rib hem, 5 cm finished</span></div>
+          </div>
+          <div class="sec"><h3>Colorways <span class="tag">unchanged</span></h3><div class="tiny">Midnight Navy · Ecru · Pine</div></div>
+          <div class="sec"><h3>Construction <span class="tag bad">1 removed</span></h3>
+            <div class="chg"><span class="del">− Step 6</span><span class="old">Side vents, 4 cm</span><span></span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ======================================================= FACTORY PORTAL -->
+<section class="screen" data-screen="portal">
+<div class="frame portal">
+  <div class="main">
+    <div class="bar">
+      <strong style="font-size:15px">Custm.ink House</strong><span style="color:#8a95a3">·</span><span>Riviera Oversized Hoodie · CI-HOD-2407 · <b>v4</b></span>
+      <div class="who"><span>Signed in as <b>Mei Lin</b>, Northstar Apparel</span><span class="tag" style="background:transparent;color:#c9d1dc;border-color:#33425a">Can comment</span></div>
+    </div>
+    <div class="banner"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01"/><circle cx="12" cy="12" r="10"/></svg>You're viewing version 4, published yesterday. If the brand publishes v5, this link will show it and list what changed.</div>
+    <div class="wrap">
+      <div class="stack">
+        <div class="card">
+          <div class="head"><div class="grow"><h2>Riviera Oversized Hoodie</h2><p>Structured oversized hoodie, double-layer hood, dropped armholes, deep kangaroo pocket. 460 GSM loopback cotton.</p></div><button class="btn">Download PDF</button><button class="btn">Download XLSX</button></div>
+          <div class="body" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;font-size:13px">
+            <div><div class="tiny">Season</div>FW27</div><div><div class="tiny">Sizes</div>XS – XL, base M</div><div><div class="tiny">Units</div>Centimeters</div><div><div class="tiny">Colorways</div>Midnight Navy · Ecru · Pine</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="head"><div class="grow"><h3>Bill of materials</h3><p>Costs are hidden on this link.</p></div></div>
+          <table class="table">
+            <thead><tr><th>#</th><th>Type</th><th>Material</th><th>Composition</th><th>Placement</th><th>Color / Pantone</th><th class="n">Consumption</th><th class="n">Unit cost</th></tr></thead>
+            <tbody>
+              <tr><td>1</td><td>Fabric</td><td>460 GSM loopback cotton</td><td>100% organic cotton</td><td>Shell, body</td><td>Midnight Navy · 19-4010 TCX</td><td class="n">1.85 m</td><td class="n locked">hidden</td></tr>
+              <tr><td>2</td><td>Rib</td><td>2×2 cotton rib</td><td>97% cotton, 3% elastane</td><td>Cuffs, hem</td><td>Tonal</td><td class="n">0.22 m</td><td class="n locked">hidden</td></tr>
+              <tr><td>3</td><td>Trim</td><td>Recycled drawcord, 10 mm, metal tips</td><td>Recycled polyester</td><td>Hood</td><td>Ecru · 11-0105 TCX</td><td class="n">1.10 m</td><td class="n locked">hidden</td></tr>
+              <tr><td>4</td><td>Label</td><td>Woven main label</td><td>Damask recycled yarn</td><td>Back neck</td><td>Black / white</td><td class="n">1 pc</td><td class="n locked">hidden</td></tr>
+              <tr><td>5</td><td>Label</td><td>Printed care label</td><td>Recycled satin</td><td>Inside left side seam</td><td>White</td><td class="n">1 pc</td><td class="n locked">hidden</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="card">
+          <div class="head"><div class="grow"><h3>Measurements</h3><p>Tolerances apply to every size. Click a row to comment.</p></div></div>
+          <table class="table">
+            <thead><tr><th>POM</th><th>Description</th><th class="n">Tol</th><th class="n">XS</th><th class="n">S</th><th class="n">M</th><th class="n">L</th><th class="n">XL</th></tr></thead>
+            <tbody>
+              <tr><td><b>A</b></td><td>Chest width, 2.5 cm below armhole <span class="comment-pin">1</span></td><td class="n">± 0.5</td><td class="n">54.0</td><td class="n">57.0</td><td class="n"><b>60.0</b></td><td class="n">63.0</td><td class="n">66.0</td></tr>
+              <tr><td><b>B</b></td><td>Body length from HPS</td><td class="n">± 1.0</td><td class="n">66.0</td><td class="n">68.0</td><td class="n"><b>70.0</b></td><td class="n">72.0</td><td class="n">74.0</td></tr>
+              <tr><td><b>C</b></td><td>Sleeve length from shoulder</td><td class="n">± 0.5</td><td class="n">58.0</td><td class="n">59.0</td><td class="n"><b>60.0</b></td><td class="n">61.0</td><td class="n">62.5</td></tr>
+              <tr><td><b>D</b></td><td>Bottom opening, relaxed</td><td class="n">± 0.5</td><td class="n">48.0</td><td class="n">51.0</td><td class="n"><b>54.0</b></td><td class="n">57.0</td><td class="n">60.0</td></tr>
+            </tbody>
+          </table>
+          <div class="thread" style="margin-top:14px">
+            <div class="msg"><span class="who ext">ML</span><div><strong>Mei Lin</strong><span class="meta">on A · 8 min ago</span><p>Fit sample #2 measured 61.2 at chest. Loopback relaxes ~1 cm after wash. Keep 60 or move spec to 61?</p></div></div>
+            <div class="msg"><span class="who">TD</span><div><strong>Tim</strong><span class="meta">Custm.ink · 2 min ago</span><p>Keep 60 pre-wash. We'll add a post-wash target in v5.</p></div></div>
+            <div class="reply"><input placeholder="Reply…" aria-label="Reply"><button class="btn sm primary">Reply</button></div>
+          </div>
+        </div>
+      </div>
+      <div class="side">
+        <div class="card"><div class="head"><div class="grow"><h3>Sample rounds</h3></div></div>
+          <div class="body" style="display:flex;flex-direction:column;gap:10px;font-size:13px">
+            <div style="display:flex;gap:10px;align-items:center"><span class="tag ok">Proto #1</span><span>Received Aug 24 · approved with changes</span></div>
+            <div style="display:flex;gap:10px;align-items:center"><span class="tag warn">Fit #2</span><span>Received Sep 3 · 1 POM out of tolerance</span></div>
+            <div style="display:flex;gap:10px;align-items:center"><span class="tag">PP</span><span>Requested — due Sep 19</span></div>
+            <button class="btn sm" style="align-self:flex-start">Submit sample measurements</button>
+          </div>
+        </div>
+        <div class="card"><div class="head"><div class="grow"><h3>Front flat</h3></div></div>
+          <div class="body" style="display:grid;place-items:center;background:#fafbf9;border-radius:0 0 10px 10px">
+            <svg viewBox="0 0 360 400" style="width:100%;max-width:220px" aria-hidden="true"><g fill="#fff" stroke="#172230" stroke-width="2.2" stroke-linejoin="round"><path d="M120 70 C130 45 150 35 180 35 C210 35 230 45 240 70 L250 90 L232 100 C236 82 222 65 180 62 C138 65 124 82 128 100 Z"/><path d="M128 100 L232 100 L262 112 L328 150 L308 210 L268 195 L268 350 L92 350 L92 195 L52 210 L32 150 L98 112 Z"/><path d="M118 260 L242 260 L250 330 L110 330 Z" stroke-width="1.8"/><path d="M92 350 L268 350 L268 372 L92 372 Z" stroke-dasharray="4 3" stroke-width="1.6"/></g></svg>
+          </div>
+        </div>
+        <div class="card"><div class="body" style="font-size:13px"><b>Questions about this pack?</b><p class="muted" style="margin:4px 0 0">Comments go straight to Tim and James. Replies arrive by email and here.</p></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ======================================================= DEVELOPERS -->
+<section class="screen" data-screen="developers">
+<div class="frame">
+  <aside class="sidebar">
+    <div class="brandswitch"><span class="mark">CI</span><span class="copy"><strong>Custm.ink Studio</strong><span>Agency workspace · 3 brands</span></span></div>
+    <div class="group"><p>Workspace</p><a class="nav" href="#">Dashboard</a><a class="nav" href="#">Styles</a><a class="nav" href="#">Seasons</a></div>
+    <div class="group"><p>Libraries</p><a class="nav" href="#">Sketches</a><a class="nav" href="#">Materials &amp; trims</a><a class="nav" href="#">Points of measure</a><a class="nav" href="#">Colors</a><a class="nav" href="#">Size ranges</a></div>
+    <div class="group"><p>Operations</p><a class="nav" href="#">Factories</a><a class="nav" href="#">Activity</a><a class="nav active" href="#">Developers</a></div>
+    <div class="foot"><span class="avatar">JD</span><span><strong>James</strong><small>Owner</small></span></div>
+  </aside>
+  <div class="main">
+    <div class="topbar"><div class="search">Search<kbd>⌘K</kbd></div><div class="actions"><a class="btn" href="#">API reference</a><button class="btn primary">Create API key</button></div></div>
+    <div class="content">
+      <div style="display:flex;align-items:flex-end;margin-bottom:14px"><div style="flex:1"><div class="tiny">Developers</div><h1>Connect Studio to your tools</h1><p class="muted" style="margin:4px 0 0">Every screen in Studio is also an endpoint. Keys are per workspace; each one is scoped.</p></div></div>
+      <div class="dev">
+        <div class="card">
+          <div class="head"><div class="grow"><h3>API keys</h3><p>Shown once at creation. Revoke instantly.</p></div></div>
+          <table class="table">
+            <thead><tr><th>Name</th><th>Key</th><th>Scopes</th><th>Last used</th><th></th></tr></thead>
+            <tbody>
+              <tr><td><b>n8n production</b></td><td><code>tp_live_9f3a…c21d</code></td><td><span class="tag">read</span> <span class="tag">write</span> <span class="tag">export</span></td><td>3 min ago</td><td><button class="btn sm">Revoke</button></td></tr>
+              <tr><td><b>Shopify sync</b></td><td><code>tp_live_44b0…e7a9</code></td><td><span class="tag">read</span></td><td>1 hr ago</td><td><button class="btn sm">Revoke</button></td></tr>
+              <tr><td><b>Claude Code (local)</b></td><td><code>tp_test_1a2b…0f9e</code></td><td><span class="tag">read</span> <span class="tag">write</span></td><td>Yesterday</td><td><button class="btn sm">Revoke</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="card">
+          <div class="head"><div class="grow"><h3>Webhooks</h3><p>Signed with HMAC-SHA256. Retried 5 times with backoff.</p></div><button class="btn sm">Add endpoint</button></div>
+          <table class="table">
+            <thead><tr><th>Endpoint</th><th>Events</th><th>Status</th><th>Last delivery</th></tr></thead>
+            <tbody>
+              <tr><td><code>https://n8n.shwoop.dev/webhook/studio</code></td><td>style.published, export.completed, comment.created</td><td><span class="switch"></span></td><td><span class="tag ok">200</span> 412 ms · yesterday</td></tr>
+              <tr><td><code>https://hooks.zapier.com/…/8c1</code></td><td>sample.updated</td><td><span class="switch off"></span></td><td><span class="tag bad">timeout</span> dead after 5 tries</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="card span">
+          <div class="head"><div class="grow"><h3>Create a style from n8n</h3><p>The same call the Northshore Training Tee came in on this morning.</p></div><span class="tag">POST /api/v1/styles</span></div>
+          <div class="body" style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+<pre>curl -X POST https://studio.custm.ink/api/v1/styles \
+  -H "Authorization: Bearer tp_live_…" \
+  -H "Idempotency-Key: shopify-8817" \
+  -d '{
+    "brand_id": "0192a7c1-…",
+    "style_number": "NS-TEE-0107",
+    "name": "Northshore Training Tee",
+    "size_range_id": "0192a7c1-…",
+    "bom": [
+      { "kind": "fabric", "name": "180 GSM recycled poly mesh",
+        "placement": "body", "consumption": 1.2, "uom": "m" }
+    ]
+  }'</pre>
+<pre>{
+  "id": "0192b3f9-4c1e-7b52-9a0d-…",
+  "style_number": "NS-TEE-0107",
+  "status": "draft",
+  "latest_version_no": 0,
+  "bom": [ { "id": "0192b3f9-…", "source": "api" } ],
+  "links": {
+    "self":    "/api/v1/styles/0192b3f9-…",
+    "publish": "/api/v1/styles/0192b3f9-…/publish",
+    "web":     "https://studio.custm.ink/northshore/styles/NS-TEE-0107"
+  }
+}</pre>
+          </div>
+        </div>
+        <div class="card span">
+          <div class="head"><div class="grow"><h3>Recent deliveries</h3></div></div>
+          <table class="table">
+            <thead><tr><th>Event</th><th>Style</th><th>Endpoint</th><th>Attempt</th><th>Response</th><th>When</th></tr></thead>
+            <tbody>
+              <tr><td><code>comment.created</code></td><td>CI-HOD-2407</td><td>n8n.shwoop.dev</td><td>1</td><td><span class="tag ok">200</span></td><td>8 min ago</td></tr>
+              <tr><td><code>style.created</code></td><td>NS-TEE-0107</td><td>n8n.shwoop.dev</td><td>1</td><td><span class="tag ok">200</span></td><td>1 hr ago</td></tr>
+              <tr><td><code>export.completed</code></td><td>CI-HOD-2407 v4</td><td>n8n.shwoop.dev</td><td>1</td><td><span class="tag ok">200</span></td><td>Yesterday</td></tr>
+              <tr><td><code>style.published</code></td><td>CI-HOD-2407 v4</td><td>n8n.shwoop.dev</td><td>1</td><td><span class="tag ok">200</span></td><td>Yesterday</td></tr>
+              <tr><td><code>sample.updated</code></td><td>RR-SHT-0312</td><td>hooks.zapier.com</td><td>5</td><td><span class="tag bad">timeout</span></td><td>2 days ago</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ======================================================= FACTORY PDF -->
+<section class="screen" data-screen="print">
+<div class="frame print">
+  <div class="main">
+    <div class="toolbar">
+      <div><div class="tiny">Export preview</div><h2>Riviera Oversized Hoodie · v4 · Letter landscape · 7 pages</h2></div>
+      <div class="grow"></div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px"><span class="switch"></span>Hide costs</label>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px"><span class="switch off"></span>Chinese labels</label>
+      <button class="btn">Download XLSX</button><button class="btn primary">Download PDF</button>
+    </div>
+    <div class="canvas">
+      <div class="page">
+        <div class="ph"><span class="logo">CUSTM.INK HOUSE</span><span style="color:#666">Tech pack</span><div class="meta"><b>Riviera Oversized Hoodie</b> · CI-HOD-2407<br>Version 4 · Published 4 Sep 2026 · FW27<br>Northstar Apparel · Contact: Tim de Vallée</div></div>
+        <div class="grid">
+          <div>
+            <h4>Front and back flats</h4>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <svg viewBox="0 0 360 400" style="width:100%;border:1px solid #ddd;background:#fff" aria-hidden="true"><g fill="#fff" stroke="#111" stroke-width="2.4" stroke-linejoin="round"><path d="M120 70 C130 45 150 35 180 35 C210 35 230 45 240 70 L250 90 L232 100 C236 82 222 65 180 62 C138 65 124 82 128 100 Z"/><path d="M128 100 L232 100 L262 112 L328 150 L308 210 L268 195 L268 350 L92 350 L92 195 L52 210 L32 150 L98 112 Z"/><path d="M118 260 L242 260 L250 330 L110 330 Z" stroke-width="1.8"/><path d="M92 350 L268 350 L268 372 L92 372 Z" stroke-dasharray="4 3" stroke-width="1.6"/></g><g font-family="Instrument Sans,sans-serif" font-size="14" font-weight="700" fill="#fff"><circle cx="180" cy="48" r="11" fill="#111"/><text x="180" y="53" text-anchor="middle">1</text><circle cx="60" cy="160" r="11" fill="#111"/><text x="60" y="165" text-anchor="middle">2</text><circle cx="230" cy="295" r="11" fill="#111"/><text x="230" y="300" text-anchor="middle">3</text><circle cx="180" cy="361" r="11" fill="#111"/><text x="180" y="366" text-anchor="middle">4</text></g></svg>
+              <svg viewBox="0 0 360 400" style="width:100%;border:1px solid #ddd;background:#fff" aria-hidden="true"><g fill="#fff" stroke="#111" stroke-width="2.4" stroke-linejoin="round"><path d="M120 70 C130 45 150 35 180 35 C210 35 230 45 240 70 L250 90 L232 100 L128 100 Z"/><path d="M128 100 L232 100 L262 112 L328 150 L308 210 L268 195 L268 350 L92 350 L92 195 L52 210 L32 150 L98 112 Z"/><path d="M92 350 L268 350 L268 372 L92 372 Z" stroke-dasharray="4 3" stroke-width="1.6"/><path d="M180 100 L180 350" stroke-dasharray="3 3" stroke-width="1.2"/></g><g font-family="Instrument Sans,sans-serif" font-size="14" font-weight="700" fill="#fff"><circle cx="180" cy="122" r="11" fill="#111"/><text x="180" y="127" text-anchor="middle">5</text></g></svg>
+            </div>
+            <table class="ptable" style="margin-top:10px">
+              <tr><td style="width:24px"><span class="pmk">1</span></td><td>Double-layer hood, self-fabric lining, 10 mm recycled drawcord with metal tips</td></tr>
+              <tr><td><span class="pmk">2</span></td><td>Dropped shoulder, 1.2 cm coverstitch, 12 SPI</td></tr>
+              <tr><td><span class="pmk">3</span></td><td>Kangaroo pocket, bar-tacked at four corners</td></tr>
+              <tr><td><span class="pmk">4</span></td><td>2×2 rib hem, 5 cm finished</td></tr>
+              <tr><td><span class="pmk">5</span></td><td>Woven main label at back neck, centered on tape</td></tr>
+            </table>
+          </div>
+          <div>
+            <h4>Bill of materials</h4>
+            <table class="ptable">
+              <thead><tr><th>#</th><th>Type</th><th>Material</th><th>Placement</th><th>Color · Pantone</th><th>Cons.</th></tr></thead>
+              <tbody>
+                <tr><td>1</td><td>Fabric</td><td>460 GSM loopback cotton, 100% organic</td><td>Shell, body</td><td>Midnight Navy · 19-4010</td><td class="n">1.85 m</td></tr>
+                <tr><td>2</td><td>Rib</td><td>2×2 cotton rib, 97/3 elastane</td><td>Cuffs, hem</td><td>Tonal</td><td class="n">0.22 m</td></tr>
+                <tr><td>3</td><td>Trim</td><td>Recycled drawcord 10 mm, metal tips</td><td>Hood</td><td>Ecru · 11-0105</td><td class="n">1.10 m</td></tr>
+                <tr><td>4</td><td>Label</td><td>Woven main label, damask</td><td>Back neck</td><td>Black / white</td><td class="n">1 pc</td></tr>
+                <tr><td>5</td><td>Label</td><td>Printed care label, recycled satin</td><td>Inside left seam</td><td>White</td><td class="n">1 pc</td></tr>
+              </tbody>
+            </table>
+            <h4 style="margin-top:14px">Measurements, cm, base M</h4>
+            <table class="ptable">
+              <thead><tr><th>POM</th><th>Description</th><th>Tol</th><th>XS</th><th>S</th><th>M</th><th>L</th><th>XL</th></tr></thead>
+              <tbody>
+                <tr><td>A</td><td>Chest width, 2.5 cm below armhole</td><td class="n">±0.5</td><td class="n">54.0</td><td class="n">57.0</td><td class="n"><b>60.0</b></td><td class="n">63.0</td><td class="n">66.0</td></tr>
+                <tr><td>B</td><td>Body length from HPS</td><td class="n">±1.0</td><td class="n">66.0</td><td class="n">68.0</td><td class="n"><b>70.0</b></td><td class="n">72.0</td><td class="n">74.0</td></tr>
+                <tr><td>C</td><td>Sleeve length from shoulder</td><td class="n">±0.5</td><td class="n">58.0</td><td class="n">59.0</td><td class="n"><b>60.0</b></td><td class="n">61.0</td><td class="n">62.5</td></tr>
+                <tr><td>D</td><td>Bottom opening, relaxed</td><td class="n">±0.5</td><td class="n">48.0</td><td class="n">51.0</td><td class="n"><b>54.0</b></td><td class="n">57.0</td><td class="n">60.0</td></tr>
+                <tr><td>E</td><td>Hood height</td><td class="n">±0.5</td><td class="n">36.0</td><td class="n">36.5</td><td class="n"><b>37.0</b></td><td class="n">37.5</td><td class="n">38.0</td></tr>
+                <tr><td>F</td><td>Kangaroo pocket width</td><td class="n">±0.3</td><td class="n">28.0</td><td class="n">29.0</td><td class="n"><b>30.0</b></td><td class="n">31.0</td><td class="n">32.0</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="pf"><span>CI-HOD-2407 · v4 · Costs hidden on this export</span><span>Custm.ink House · studio.custm.ink</span><span>Page 2 of 7</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+</div>
+
+<script>
+  (function(){
+    var pills=document.querySelectorAll('#mocktool .pill');
+    var screens=document.querySelectorAll('#studio .screen');
+    function show(id){
+      pills.forEach(function(p){var on=p.dataset.target===id;p.classList.toggle('active',on);p.setAttribute('aria-selected',on)});
+      screens.forEach(function(s){s.classList.toggle('active',s.dataset.screen===id)});
+      window.scrollTo({top:0});
+    }
+    pills.forEach(function(p){p.addEventListener('click',function(){show(p.dataset.target)})});
+    document.querySelectorAll('#studio a[href="#"]').forEach(function(a){a.addEventListener('click',function(e){e.preventDefault()})});
+  })();
+</script>
+</body>
+</html>
