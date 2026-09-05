@@ -4,7 +4,8 @@ Multi-tenant SaaS where apparel brands build, review, version, share, and export
 factory-ready tech packs. Next.js 16 App Router · TypeScript strict · Tailwind 4 ·
 Neon Postgres · Drizzle · Vercel.
 
-`CLAUDE_CODE_MASTER_PROMPT.md` is the product spec. `docs/reports/phase-N.md`
+`CLAUDE_CODE_MASTER_PROMPT.md` is the product spec. `HANDOFF.md` is the current
+state and what to pick up next — read it first. `docs/reports/phase-N.md`
 records what each phase actually delivered. The pre-migration prototype is
 preserved under `archive/vinext-prototype/` — read-only reference, never a build
 target.
