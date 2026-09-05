@@ -22,7 +22,8 @@ is done.
 | CI | `.github/workflows/ci.yml`, green on the last two runs |
 | Repo | `DigitalBoutique-ai/custmink-studio` (private), Vercel git-connected — pushes to `main` deploy |
 | Neon | `custmink-studio` / `purple-king-22972792`, us-east-1, PG 17, 0.25 CU, 5-min scale-to-zero |
-| Production | https://custmink-studio-e62mfb8x2-digitalboutique.vercel.app |
+| Production | https://techpack.intlo.com — **public, no auth gate** (see below) |
+| Stable preview alias | https://custmink-studio-git-main-digitalboutique.vercel.app |
 
 **Verified this session** (`npm run verify`, exit 0): typecheck, eslint, 124
 tests, Neon compute preflight. `npm run build` exit 0. **Not run:** Playwright
@@ -204,8 +205,16 @@ registry narrowed it to the literal `10`, which made the divide-by-zero guard in
 `readinessScore` provably dead and failed typecheck. Widening keeps the guard
 live. Do not "simplify" the annotation away.
 
-**9. Vercel Deployment Protection is on.** A plain `curl` against any deployment
-returns an SSO redirect, not your page — early route checks reported 200 for the
+**9. Deployment Protection does not cover the production custom domain.**
+`techpack.intlo.com` serves the app to anyone, with no SSO gate — protection
+applies to preview and `*.vercel.app` deployment URLs only. No tenant data is
+exposed, because production has neither `ALLOW_DEV_SESSION` nor the `DEV_*` ids,
+so `getSession()` returns null and the data layer returns the demo dataset
+without touching Postgres (which also keeps Neon asleep under bot traffic). What
+*is* public is the entire workspace UI. `robots.ts` disallows crawling, so it
+should not get indexed, but the URL is browsable by anyone who has it. **Decide
+whether to gate it before Clerk lands.** A plain `curl` against a *preview*
+deployment still returns an SSO redirect, not your page — early route checks reported 200 for the
 login page. Use `vercel curl <url>`, and put curl's own flags **after** the URL.
 Related: a misordered `-w` flag wrote a file literally named `-w` containing
 9.7 KB of Vercel 404 HTML, and it got committed. It is gitignored now.
