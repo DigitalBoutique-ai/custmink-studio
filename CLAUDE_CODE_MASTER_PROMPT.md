@@ -24,8 +24,15 @@ Do not copy Techstyles branding, copy, proprietary artwork, or code. The screens
 
 Custm.ink Studio is the operating system between apparel concept and factory production.
 
+<!-- amended 2026-09-05 -->
+Primary go-to-market: decorators and print shops moving from wholesale blanks to
+private label. They already sell garments, already have factory relationships and
+artwork, and hit the tech-pack wall the moment they want their own cut-and-sew.
+Independent apparel brands are the second market, not the first.
+
 Primary users:
 
+- Decorators and print shops taking a proven blank to their own private-label style
 - Independent designers creating their first production-ready tech pack
 - Apparel brands managing collections, suppliers, samples, and approvals
 - Product developers working across many styles
@@ -97,6 +104,7 @@ Build these authenticated routes:
 - `/settings/team`
 - `/settings/brand`
 - `/settings/billing`
+- `/settings/developers` <!-- amended 2026-09-05 -->
 
 Build these public or token-gated routes:
 
@@ -107,6 +115,18 @@ Build these public or token-gated routes:
 - `/accept-invite/[token]`
 
 Use nested product layouts so the section table of contents, completion status, save state, share controls, and version controls stay stable while sections change.
+
+<!-- amended 2026-09-05 -->
+Build a public REST API under `/api/v1/**`:
+
+- Handlers wrap the same server actions the UI calls. One mutation path, two entry
+  points — an API route that reimplements a mutation will drift from the UI's.
+- Every list endpoint supports cursor pagination and an `updated_since` filter.
+- `Idempotency-Key` is honoured on every POST.
+- Errors follow RFC 9457 (`application/problem+json`).
+- OpenAPI is generated from the Zod schemas and served at `/api/v1/openapi.json`.
+- Authentication is by API key (see `api_keys` in section 5), scoped and
+  organization-bound. Model output and request bodies never choose the organization.
 
 ## 5. Core database model
 
@@ -123,6 +143,7 @@ Identity and billing:
 
 Product development:
 
+- `brands` <!-- amended 2026-09-05 -->
 - `collections`
 - `products`
 - `product_versions`
@@ -158,6 +179,47 @@ Operations and collaboration:
 - `activity_logs`
 - `ai_jobs`
 - `export_jobs`
+- `api_keys` <!-- amended 2026-09-05 -->
+- `webhooks` <!-- amended 2026-09-05 -->
+- `webhook_deliveries` <!-- amended 2026-09-05 -->
+
+<!-- amended 2026-09-05 -->
+API and webhook shape:
+
+- `api_keys`: key prefix, sha256 hash of the secret, scopes (`read | write |
+  export`), `last_used_at`, `revoked_at`. The secret is shown once, never stored.
+- `webhooks`: target url, encrypted signing secret, event filter, active flag.
+- `webhook_deliveries`: a durable outbox — event, attempt, `next_attempt_at`,
+  response status and body.
+
+Events fan out from `activity_logs`, so anything already audited is already
+deliverable. Payloads are signed `X-Studio-Signature: sha256=HMAC(secret,
+timestamp + "." + body)`. Five retries with exponential backoff, and the delivery
+log is visible in the UI — a webhook you cannot debug is a support ticket.
+
+<!-- amended 2026-09-05 -->
+The hierarchy is organization → brands → collections → products. An organization
+is an account; a brand is what appears on the tech pack. Brand-scoped: logo,
+primary color, PDF settings, currency, unit, and the libraries (materials, size
+charts, colors, artwork). `organization_settings` keeps organization-level
+defaults only — never *the* brand.
+
+Every product carries `brand_id` from the first Phase 2 migration. Retrofitting it
+later rewrites every product row and every child row that inherits brand context,
+so `brands` lands before any product child table exists.
+
+<!-- amended 2026-09-05 -->
+Every row table AI can write to — `bom_items`, `points_of_measure`,
+`measurement_values`, `construction_instructions`, `packaging_items`,
+`artwork_placements` — carries provenance:
+
+- `source`: enum `manual | library | import | api | ai_draft`
+- `accepted_at`: timestamp, null until a human accepts the row
+
+Applying an `ai_proposals` row writes `source: ai_draft`; accepting sets
+`accepted_at`. Provenance lives on the row, so it survives the proposal being
+closed, and "what in this pack did a model write, and did anyone sign off?" stays
+answerable for the life of the product.
 
 Every tenant-owned row must include `organization_id`. Enforce tenant boundaries in the data-access layer and test them. Do not rely on UI filtering for security.
 
@@ -325,6 +387,11 @@ Create Stripe plans with configuration, not hard-coded product IDs:
 - Brand: 20 users, unlimited archived products, advanced approvals and supplier collaboration
 - Enterprise: custom limits, SSO-ready architecture, support controls
 
+<!-- amended 2026-09-05 -->
+Factory guests are free and unlimited on every plan and never count toward user
+limits. Per-supplier seat fees are the top pricing complaint about the incumbents,
+and a tech pack the factory cannot open is not a tech pack.
+
 Implement checkout, customer portal, plan changes, cancellation, webhook verification, idempotency, entitlements, and usage enforcement. Never trust client plan state.
 
 ## 11. Security and reliability
@@ -372,10 +439,12 @@ Requirements:
 
 ## 13. Seed data
 
-Create a development seed organization called Custm.ink Studio with:
+<!-- amended 2026-09-05 -->
+Create a development seed organization called Digital Boutique AI with:
 
 - Owner: Tim de Vallée
-- Collection: Riviera Resort 2027
+- Brands: Custm.ink (house brand) and Exora Ink (pilot client)
+- Collection: Riviera Resort 2027 under the Custm.ink brand
 - Products: Riviera Oversized Hoodie, Harbor Heavyweight Tee, Atlas Tapered Jogger
 - Four colorways
 - Four approved materials
@@ -431,6 +500,11 @@ Phase 1 — Foundation
 Phase 2 — Complete tech pack CRUD
 
 - Overview, colorways, BOM, measurements, construction, packaging, suppliers, libraries, autosave, completion states, and activity log
+- `brands` lands in the **first** Phase 2 migration, with `brand_id` on `products` <!-- amended 2026-09-05 -->
+- "Start from a blank": create a product by seeding fabric, composition, weight, <!-- amended 2026-09-05 -->
+  and size chart from a wholesale catalog SKU. SanMar data exists in Supabase;
+  treat it as one implementation behind a catalog-import interface, not a
+  dependency the product cannot ship without.
 - Deliver full data persistence and tenant tests
 
 Phase 3 — Canvas and assets
@@ -441,6 +515,8 @@ Phase 3 — Canvas and assets
 Phase 4 — Sampling and collaboration
 
 - Sampling rounds, pinned comments, mentions, approvals, notifications, secure share links, and factory views
+- Public API, webhooks, and `/settings/developers`, alongside share links — both <!-- amended 2026-09-05 -->
+  are the same problem: getting a finished spec out of the product safely
 
 Phase 5 — AI and exports
 

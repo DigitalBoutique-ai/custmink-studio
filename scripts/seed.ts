@@ -1,8 +1,13 @@
 /**
  * Development seed — master prompt section 13.
  *
- * Creates the Custm.ink Studio demo organization with the same records the
+ * Creates the Digital Boutique AI demo organization with the same records the
  * prototype showed, so the migrated UI renders identical content from Postgres.
+ *
+ * The organization is the account; the brand is what appears on a tech pack.
+ * DBAI runs several — Custm.ink is the house brand, Exora Ink is the pilot
+ * client. Those become `brands` rows once that table lands in the first Phase 2
+ * migration (2026-09-05 amendment, master prompt section 13).
  *
  * Refuses to run against production. Never wire this into a deploy step.
  */
@@ -56,12 +61,18 @@ async function main(): Promise<void> {
     .insert(schema.organizations)
     .values({
       externalId: "org_seed_custmink_studio",
-      name: "Custm.ink Studio",
-      slug: "custmink-studio",
+      name: "Digital Boutique AI",
+      slug: "digital-boutique-ai",
     })
     .onConflictDoUpdate({
+      // externalId is the upsert key, so an already-seeded database is renamed
+      // in place rather than gaining a second organization.
       target: schema.organizations.externalId,
-      set: { name: "Custm.ink Studio", updatedAt: new Date() },
+      set: {
+        name: "Digital Boutique AI",
+        slug: "digital-boutique-ai",
+        updatedAt: new Date(),
+      },
     })
     .returning();
 
@@ -92,6 +103,8 @@ async function main(): Promise<void> {
     .values({ organizationId: organization.id, brandPrimaryColor: "#3451e8" })
     .onConflictDoNothing();
 
+  // TODO(brands): once `brands` exists, seed "Custm.ink" and "Exora Ink" here
+  // and hang this collection off the Custm.ink brand.
   const [collection] = await db
     .insert(schema.collections)
     .values({
