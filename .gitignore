@@ -44,3 +44,6 @@ test-results/
 -w
 deploy-log.md
 .env*
+
+# research archives — unpack into docs/research/, never commit the archive
+*.zip
