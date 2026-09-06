@@ -32,7 +32,7 @@ correctly on day one.
 
 | Service | Needed for | Owner to create as | Status |
 |---|---|---|---|
-| Clerk | Phase 2 — real tenancy. The hard blocker. | DBAI organization account | TODO |
+| Clerk | Phase 2 — real tenancy. | Provisioned 2026-09-06 as Marketplace resource `custmink-studio-clerk` on the `digitalboutique` Vercel team ✅ | **Development instance only** (`pk_test`/`sk_test`). TODO: production instance + custom domain before launch. |
 | Anthropic | AI drafting spike, Phase 5 | DBAI org on the Anthropic Console, not a personal API key | TODO — no `ANTHROPIC_API_KEY` set |
 | Stripe | Phase 6 — billing | DBAI Stripe account, test mode first | TODO — unkeyed |
 | Resend | invitations, export delivery, approvals | DBAI account, domain-verified | TODO |
