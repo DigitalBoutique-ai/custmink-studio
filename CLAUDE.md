@@ -124,6 +124,24 @@ These are the ones that get written wrong here. The global rules in
 - Migrations never run in the Vercel build. Deploy, verify the preview, then run
   `npm run db:migrate` explicitly.
 
+### Design system
+
+- **Read `DESIGN.md` before generating or editing any UI** — a component, a
+  stylesheet, a page, a dialog, an email, a PDF layout. It is the single source
+  of truth for colour, type, shape, spacing and elevation.
+- **Use its tokens as CSS variables.** The names in `DESIGN.md` are declared on
+  `:root` in `app/globals.css` (`var(--linen)`, `var(--ember)`, `var(--radius-pill)`…)
+  and mapped into the shadcn aliases that Tailwind utilities consume. Never
+  hard-code a hex, radius, or shadow that has a token; if one is missing, add the
+  token to `app/globals.css` **and** the table in `DESIGN.md` in the same change.
+- **Ask before deviating.** A second accent colour, a square button, a cool-grey
+  shadow, a different typeface — anything the Do/Don't lists rule out — is a
+  question for the user, not a judgement call. Say what the design says, say
+  what you want to do instead and why, and wait.
+- The marketing site (`app/(marketing)/**`) is the one documented exception:
+  it pins its own legacy palette on `.mk-site`. Do not migrate it as a side
+  effect of other work.
+
 ### Off limits
 
 - `archive/**` — the preserved prototype. Never edit, never import from it.

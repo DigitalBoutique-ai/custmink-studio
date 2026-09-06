@@ -125,7 +125,7 @@ export function DashboardView({ firstName }: { firstName: string }) {
               <h2>Collection progress</h2>
               <p>Riviera Resort 2027 · 12 styles</p>
             </div>
-            <Badge>On track</Badge>
+            <Badge variant="secondary">On track</Badge>
           </div>
           <div className="collection-progress">
             <div>
