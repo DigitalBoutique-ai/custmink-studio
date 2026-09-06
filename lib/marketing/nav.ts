@@ -27,6 +27,7 @@ export const MARKETING_NAV: readonly MarketingLink[] = [
   { label: "Features", href: `/#${SECTION_IDS.features}` },
   { label: "Design", href: `/#${SECTION_IDS.design}` },
   { label: "Ideas", href: `/#${SECTION_IDS.ideas}` },
+  { label: "About", href: "/about" },
   { label: "Pricing", href: "/pricing" },
 ];
 

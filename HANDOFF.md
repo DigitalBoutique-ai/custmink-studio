@@ -8,7 +8,7 @@ factory-ready tech packs. `CLAUDE_CODE_MASTER_PROMPT.md` is the product spec;
 `CLAUDE.md` is the working agreement for anyone (human or agent) touching this
 repo. Read both before changing anything.
 
-Last updated: 2026-09-06.
+Last updated: 2026-09-06 (design system + /about).
 
 > **Read `git status` before staging anything.** As of this handoff a second
 > session is wiring Clerk in this checkout, **uncommitted**: `proxy.ts`,
@@ -40,13 +40,13 @@ is done.
 | | |
 |---|---|
 | Source | 103 files across `app/ components/ lib/ db/ types/ tests/ scripts/ tools/` |
-| Tests | 225 passing, 13 files (`npm run verify` exit 0 at handoff; `npm run build` exit 0) |
+| Tests | 227 passing, 13 files (`npm run verify` exit 0 at handoff; `npm run build` exit 0) |
 | Schema | 12 tables of ~48, 4 migrations applied (`0000`–`0003`) |
 | Spec | `CLAUDE_CODE_MASTER_PROMPT.md` + the 2026-09-05 amendment; decisions in `docs/DECISIONS.md`, accounts in `docs/ACCOUNTS.md` |
 | CI | `.github/workflows/ci.yml`, green on the last two runs |
 | Repo | `DigitalBoutique-ai/custmink-studio` (private), Vercel git-connected — pushes to `main` deploy |
 | Neon | `custmink-studio` / `purple-king-22972792`, us-east-1, PG 17, 0.25 CU, 5-min scale-to-zero |
-| Production | https://techpack.intlo.com — `/`, `/pricing`, `/demo` are the static marketing site; every `(app)` route is behind Clerk sign-in; no seats provisioned yet (item 1) |
+| Production | https://techpack.intlo.com — `/`, `/pricing`, `/about`, `/demo` are the static marketing site; every `(app)` route is behind Clerk sign-in; no seats provisioned yet (item 1) |
 | Stable preview alias | https://custmink-studio-git-main-digitalboutique.vercel.app |
 
 **Verified at handoff** (`npm run verify`, exit 0): typecheck, eslint, 225
@@ -268,6 +268,38 @@ that dead-ends at a login wall is worse than no demo.
   recoloured to ink (`public/dbai-agency-white.png` for dark surfaces); the
   source is `~/Code/Logo/dbai_agency.png`. Header and footer share one
   `<Wordmark/>`, asserted by eye and by the shared component.
+
+**The design system landed — `DESIGN.md` is canonical for product UI
+(2026-09-06).** The style was chosen from the Refero styles catalog
+(`styles.refero.design`, 1,288 styles mirrored; the `refero` MCP is not
+installed here, so the catalog API was read directly). Brief: light, precise,
+dashboard-shaped, warm neutrals, one accent, Cal.com/Linear family. Winner:
+Monarch — "warm linen notebook under morning light" — over Plain (green-tinted
+neutrals) and Runway (amber accent fails as text). `DESIGN.md` carries the
+tokens, type, shape, do/don't lists, and the component notes; `CLAUDE.md` now
+says read it before any UI, use its tokens as CSS variables, ask before
+deviating.
+
+- `app/globals.css` `:root` is the token layer (`--linen`, `--paper`, `--ink`,
+  `--graphite`, `--stone`, `--smoke`, `--ember` + derived, radii, shadows,
+  fonts) mapped into the shadcn aliases, so `components/ui/*` and Tailwind
+  utilities inherit it. Every hard-coded hex in the product CSS was replaced;
+  the app shell (sidebar, topbar), the dashboard, and the sign-in card were
+  rebuilt on it. Inter and Fraunces load through `next/font` in the root
+  layout as variables only.
+- **The marketing site is the documented exception.** It shipped hours earlier
+  on cobalt/lime and consumes the same `:root` names, so `.mk-site` pins the
+  legacy palette, eyebrow colour, and brand mark. Pixel-identical, verified
+  against production. Migrating it onto `DESIGN.md` is its own change.
+- Two pre-existing sign-in bugs fixed on the way: the brand mark rendered as a
+  solid tile (`.public-brand div` clobbered its grid) and Clerk's duplicate
+  header was never hidden — `appearance.elements.header: "hidden"` only adds a
+  class name and Tailwind never emitted `.hidden`; it is a plain CSS rule now.
+- `/about` was added to the marketing site: what the product does, who it is
+  for, how it is built. Its "N of 10 sections live" line is counted from
+  `SECTION_CLAIMS`, so it cannot outrun the features grid.
+- **Seen, not fixed:** production `/sign-in` renders Clerk's "Development
+  mode" badge — the publishable key on Vercel is a `pk_test_` key.
 
 ---
 
