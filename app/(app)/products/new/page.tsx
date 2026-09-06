@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 
 import { NewProductView } from "@/components/techpack/new-product-view";
+import { pageTitle } from "@/lib/brand";
 
-export const metadata: Metadata = { title: "New tech pack | Custm.ink Studio" };
+export const metadata: Metadata = { title: pageTitle("New tech pack") };
 
 /**
  * Standalone entry point for the create wizard, so the flow is linkable and

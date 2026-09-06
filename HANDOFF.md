@@ -1,4 +1,7 @@
-# Handoff — Custm.ink Studio
+# Handoff — The Studio™
+
+*(formerly Custm.ink Studio; renamed 2026-09-05. `custm.ink` is still a DBAI
+apparel brand, and `custmink-studio` is still the repo/Vercel/Neon project id.)*
 
 Multi-tenant SaaS where apparel brands build, review, version, share, and export
 factory-ready tech packs. `CLAUDE_CODE_MASTER_PROMPT.md` is the product spec;
@@ -27,8 +30,8 @@ is done.
 | | |
 |---|---|
 | Source | 103 files across `app/ components/ lib/ db/ types/ tests/ scripts/ tools/` |
-| Tests | 167 passing, 10 files |
-| Schema | 9 tables of ~48, 1 migration (`drizzle/0000_large_mandarin.sql`) applied |
+| Tests | 187 passing, 11 files |
+| Schema | 12 tables of ~48, 4 migrations applied (`0000`–`0003`) |
 | Spec | `CLAUDE_CODE_MASTER_PROMPT.md` + the 2026-09-05 amendment; decisions in `docs/DECISIONS.md`, accounts in `docs/ACCOUNTS.md` |
 | CI | `.github/workflows/ci.yml`, green on the last two runs |
 | Repo | `DigitalBoutique-ai/custmink-studio` (private), Vercel git-connected — pushes to `main` deploy |
@@ -102,11 +105,15 @@ manual chore.
 `DROP TABLE|DROP COLUMN|ALTER COLUMN … TYPE`, failing unless annotated
 `-- expand-contract:`. Enforces the master prompt's rollback-path rule.
 
-**10. Then Phase 2** — tech-pack CRUD, ~25 tables. Two amendment rules bind the
-first migration and are enforced by `tests/schema-rules.test.ts`: `brands` lands
-first with `brand_id` on `products` and `collections`, and every row table AI can
-write to carries `source` + `accepted_at`. Both are cheap now and rewrite every
-row later. `tests/isolation.test.ts` (two seeded orgs on a Neon branch, org B
+**10. Finish Phase 2 — [WORK, in progress].** `brands`, `materials` and
+`bom_items` have shipped with real persistence; see `docs/reports/phase-2.md`.
+Four sections remain on demo data — colorways, measurements, construction,
+packaging — and each is the BOM slice repeated. `PENDING_PHASE_2_TABLES` in
+`tests/bom.test.ts` is the list, and it fails in both directions so it cannot go
+stale. Then `tests/isolation.test.ts`: two seeded organizations on a Neon
+branch, org B reading zero of org A's rows. That is the test that actually
+proves tenancy — everything shipped so far proves only shape, and mutations now
+exist to make it writable. `tests/isolation.test.ts` (two seeded orgs on a Neon branch, org B
 reads zero of org A's rows) becomes writable once mutations exist. That is the
 test that actually proves tenancy; the lint rule only proves shape.
 
@@ -219,7 +226,7 @@ existed before it was intended to. It is safe — no session variables there, so
 it renders demo data rather than tenant data — but do not assume production is
 gated just because you did not deploy it.
 
-**4. custm.ink is not a client — Custm.ink Studio is a DBAI first-party
+**4. custm.ink is not a client — The Studio™ is a DBAI first-party
 product.** The stated answer during the build session was "product for the
 custm.ink client," and it was wrong. The domain was registered 21 Aug 2026, the
 repo is days old, `src/lib/business.ts` has empty address/phone/ratings, Stripe
@@ -234,7 +241,7 @@ accordingly — there is no external client to bill or defer to.
 five named staff) is a separate, real operating business and an existing DBAI
 client. It is the **designated pilot**: a brand under the DBAI organization now,
 org #1 once Clerk is wired, on preview with a dev session until then. Exora being
-the pilot does not change who owns Custm.ink Studio.
+the pilot does not change who owns The Studio™.
 
 Consequence worth acting on: every external service must be owned by a DBAI
 account, not a personal one. `docs/ACCOUNTS.md` tracks which are and which are
@@ -359,6 +366,41 @@ assertions now require the string twice — once as a contents entry, once as th
 heading — and the check was confirmed by deleting the page and watching three
 tests go red. Verified the same way as `tests/schema-rules.test.ts`: a guard
 nobody has watched fail is not yet a guard.
+
+**20. Next 16 changed `revalidateTag` out from under CLAUDE.md's rule.** It now
+takes a required cache-life profile — `revalidateTag(tag, profile)` — and purges
+for *future* requests. The new `updateTag(tag)` is the one meant for server
+actions, and it gives read-your-own-writes. Following the rule as written would
+have served someone the BOM list that predates their own save, which is exactly
+the staleness the rule exists to prevent. CLAUDE.md is updated. **Assume other
+Next 16 API changes are lying in wait** in rules written against 15.
+
+**21. `brand_id NOT NULL` cannot ship in one migration.** Declaring the final
+state in `db/schema.ts` makes drizzle-kit emit `ADD COLUMN ... NOT NULL`, which
+fails against any populated table. It took three steps — add nullable, backfill,
+set NOT NULL — and the middle one is a script, not a migration. This will recur
+for every future NOT NULL column on a live table, so `scripts/backfill-brands.ts`
+is worth reading before the next one.
+
+**22. The seed had to reconcile with its own migration.** The backfill created a
+`default`-slug brand for existing rows; the seed then wants "Custm.ink" and
+"Exora Ink". Re-seeding naively would have left three brands, one of them an
+artefact of a migration. The seed now folds the placeholder onto the house brand
+and deletes it. A backfill that invents a row is a row someone has to clean up.
+
+**23. The registry claimed four sections were delivered that had no tables.**
+`deliveredInPhase: 2` on colorways, measurements, construction and packaging was
+aspirational — a statement about the plan being read as a statement about the
+code. `tests/bom.test.ts` now tracks the gap explicitly and fails in both
+directions: a section that leaves the pending list without a table fails, and a
+table that ships while still listed fails too. A one-directional allowlist
+becomes a place where finished work stays marked pending.
+
+**24. The lint plugin caught a delegated authorization check.** `getDefaultBrand`
+called `listBrands`, which does check — but `require-capability-check` rejected
+it anyway, and it was right to. An exported reader whose authorization lives one
+call away is the shape that becomes a hole when someone reuses the inner helper.
+Fixed by repeating the check, not by suppressing the rule.
 
 **Deliberate and load-bearing, so do not "fix" them:**
 - `lib/draft-store.ts` keeps created tech packs in `localStorage`. A Phase 1A

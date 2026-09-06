@@ -1,5 +1,5 @@
 /**
- * Domain types for the Custm.ink Studio tech-pack workspace.
+ * Domain types for The Studio tech-pack workspace.
  *
  * These mirror the shape the prototype exercised in-memory. Phase 1B replaces
  * the demo data source with Drizzle queries while keeping these contracts

@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 
 import { PublicShell } from "@/components/layout/public-shell";
+import { pageTitle } from "@/lib/brand";
 
-export const metadata: Metadata = { title: "Factory view | Custm.ink Studio", robots: { index: false } };
+export const metadata: Metadata = { title: pageTitle("Factory view"), robots: { index: false } };
 /**
  * Share links resolve per token and must never be cached across tokens. The
  * window is short and Phase 4 pairs it with on-write revalidation when a share

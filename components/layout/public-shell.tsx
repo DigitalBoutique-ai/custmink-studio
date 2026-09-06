@@ -1,4 +1,5 @@
 import { BrandMark } from "@/components/layout/brand-mark";
+import { Wordmark } from "@/components/layout/wordmark";
 
 /** Minimal unauthenticated chrome for sign-in, invitations, and factory links. */
 export function PublicShell({
@@ -18,8 +19,7 @@ export function PublicShell({
         <div className="public-brand">
           <BrandMark />
           <div>
-            <strong>Custm.ink</strong>
-            <span>Studio</span>
+            <Wordmark />
           </div>
         </div>
         <p className="eyebrow">{eyebrow}</p>

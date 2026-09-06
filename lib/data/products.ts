@@ -8,10 +8,10 @@ import { db } from "@/db";
 import { productSectionStatuses, products } from "@/db/schema";
 import { assertCan } from "@/lib/auth/permissions";
 import { getSession } from "@/lib/auth/session";
-import { bomRows, colorways, measurements, starterProducts } from "@/lib/demo-data";
+import { colorways, measurements, starterProducts } from "@/lib/demo-data";
 import { hasDatabase } from "@/lib/env";
 import { toProduct } from "@/lib/data/product-mapping";
-import type { BomRow, Colorway, MeasurementRow, Product } from "@/types/techpack";
+import type { Colorway, MeasurementRow, Product } from "@/types/techpack";
 
 /**
  * Server-only data access for products.
@@ -76,9 +76,12 @@ export const getProduct = cache(async (productId: string): Promise<Product | nul
 });
 
 /**
- * Colorways, BOM rows, and measurements still come from the demo dataset —
- * their tables land in Phase 2 with the screens that edit them. The signatures
- * are already product-scoped so only the bodies change.
+ * Colorways and measurements still come from the demo dataset — their tables
+ * land with the screens that edit them. The signatures are already
+ * product-scoped so only the bodies change.
+ *
+ * The BOM moved to `lib/data/bom.ts` when its table shipped in Phase 2; there
+ * is deliberately one reader per section rather than a growing products module.
  */
 export const getColorways = cache(async (_productId: string): Promise<Colorway[]> => {
   const session = await getSession();
@@ -86,14 +89,6 @@ export const getColorways = cache(async (_productId: string): Promise<Colorway[]
     assertCan(session.role, "product:read");
   }
   return colorways;
-});
-
-export const getBomRows = cache(async (_productId: string): Promise<BomRow[]> => {
-  const session = await getSession();
-  if (session) {
-    assertCan(session.role, "product:read");
-  }
-  return bomRows;
 });
 
 export const getMeasurements = cache(async (_productId: string): Promise<MeasurementRow[]> => {

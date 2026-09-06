@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 
 import { PlaceholderView } from "@/components/techpack/placeholder-view";
+import { pageTitle } from "@/lib/brand";
 
-export const metadata: Metadata = { title: "Organization | Custm.ink Studio" };
+export const metadata: Metadata = { title: pageTitle("Organization") };
 
 export default function Page() {
   return (

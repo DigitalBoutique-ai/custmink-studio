@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 
 import "./globals.css";
+import { PRODUCT_NAME_TM, PRODUCT_TAGLINE } from "@/lib/brand";
 
 export const metadata: Metadata = {
-  title: "Custm.ink Studio | AI Tech Pack Builder",
+  title: `${PRODUCT_NAME_TM} | ${PRODUCT_TAGLINE}`,
   description:
     "Build factory-ready apparel tech packs with AI-assisted sketches, measurements, BOMs, artwork placement, sampling, and supplier handoff.",
   icons: {

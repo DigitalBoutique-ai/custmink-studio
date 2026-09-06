@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 
 import { PublicShell } from "@/components/layout/public-shell";
+import { pageTitle } from "@/lib/brand";
 
-export const metadata: Metadata = { title: "Create account | Custm.ink Studio" };
+export const metadata: Metadata = { title: pageTitle("Create account") };
 export const revalidate = 3600;
 
 export default function SignUpPage() {

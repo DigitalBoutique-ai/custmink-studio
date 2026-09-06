@@ -1,6 +1,6 @@
 # Accounts and service ownership
 
-Custm.ink Studio is a **Digital Boutique AI first-party product**. Every external
+The Studio™ is a **Digital Boutique AI first-party product**. Every external
 service it depends on must be owned by a DBAI account, with at least two people
 holding access. Nothing load-bearing may sit on a personal account — an
 individual's login is a single point of failure for a product, and it makes the

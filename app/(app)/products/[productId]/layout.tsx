@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { ProductWorkspace } from "@/components/techpack/product-workspace";
 import { getProduct } from "@/lib/data/products";
+import { pageTitle } from "@/lib/brand";
 
 export async function generateMetadata({
   params,
@@ -10,7 +11,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { productId } = await params;
   const product = await getProduct(productId);
-  return { title: `${product?.name ?? "Tech pack"} | Custm.ink Studio` };
+  return { title: pageTitle(product?.name ?? "Tech pack") };
 }
 
 /**

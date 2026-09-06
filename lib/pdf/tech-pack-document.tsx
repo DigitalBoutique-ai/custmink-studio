@@ -1,6 +1,7 @@
 import { Document, type DocumentProps, Page, Text, View } from "@react-pdf/renderer";
 import type { ReactElement, ReactNode } from "react";
 
+import { PRODUCT_NAME_TM } from "@/lib/brand";
 import { FlatDrawing } from "@/lib/pdf/flat";
 import {
   BOM_COLUMNS,
@@ -371,8 +372,8 @@ export function techPackDocument(data: TechPackDocumentData): ReactElement<Docum
       title={`${data.style.name} — ${data.style.code} — ${data.version.label}`}
       author={data.brand.organizationName}
       subject="Factory technical package"
-      creator="Custm.ink Studio"
-      producer="Custm.ink Studio"
+      creator={PRODUCT_NAME_TM}
+      producer={PRODUCT_NAME_TM}
     >
       <CoverPage data={data} />
       <ContentsPage data={data} />

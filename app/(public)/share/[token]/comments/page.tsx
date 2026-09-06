@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 
 import { PublicShell } from "@/components/layout/public-shell";
+import { pageTitle } from "@/lib/brand";
 
-export const metadata: Metadata = { title: "Factory comments | Custm.ink Studio", robots: { index: false } };
+export const metadata: Metadata = { title: pageTitle("Factory comments"), robots: { index: false } };
 export const revalidate = 300;
 
 export default function ShareCommentsPage() {

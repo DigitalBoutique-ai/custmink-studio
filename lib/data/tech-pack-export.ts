@@ -4,7 +4,8 @@ import { cache } from "react";
 
 import { assertCan } from "@/lib/auth/permissions";
 import { requireSession } from "@/lib/auth/session";
-import { getBomRows, getColorways, getMeasurements, getProduct } from "@/lib/data/products";
+import { getBomGridRows } from "@/lib/data/bom";
+import { getColorways, getMeasurements, getProduct } from "@/lib/data/products";
 import { workflowContent } from "@/lib/demo-data";
 import { buildTechPackData, type TechPackDocumentData } from "@/lib/pdf/tech-pack-data";
 
@@ -40,7 +41,7 @@ export const getTechPackExportData = cache(
 
     const [colorways, bom, measurements] = await Promise.all([
       getColorways(productId),
-      getBomRows(productId),
+      getBomGridRows(productId),
       getMeasurements(productId),
     ]);
 
@@ -49,8 +50,9 @@ export const getTechPackExportData = cache(
       colorways,
       bom,
       measurements,
-      // TODO(Phase 2): construction, packaging, and sampling still come from
-      // the demo dataset — their tables land with the screens that edit them.
+      // The BOM is real as of Phase 2. Construction, packaging and sampling
+      // still come from the demo dataset — their tables land with the screens
+      // that edit them.
       construction: workflowContent.construction.items,
       packaging: workflowContent.packaging.items,
       sampling: workflowContent.sampling.items,

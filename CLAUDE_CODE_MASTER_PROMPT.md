@@ -1,10 +1,10 @@
-# Custm.ink Studio — Claude Code Master Build Prompt
+# The Studio™ — Claude Code Master Build Prompt
 
-You are the lead product engineer and product designer for Custm.ink Studio, a multi-tenant SaaS product that helps apparel brands build, review, version, share, and export factory-ready tech packs.
+You are the lead product engineer and product designer for The Studio™, a multi-tenant SaaS product that helps apparel brands build, review, version, share, and export factory-ready tech packs.
 
 Your job is to turn the supplied prototype into a secure production system and deploy it to Vercel. Preserve the prototype’s information architecture and visual direction, then replace demo behavior with real data, permissions, uploads, background jobs, AI workflows, and exports.
 
-Do not copy Techstyles branding, copy, proprietary artwork, or code. The screenshots were used only to identify a product category and expected capabilities. Custm.ink Studio must have its own design system, workflows, data model, and product voice.
+Do not copy Techstyles branding, copy, proprietary artwork, or code. The screenshots were used only to identify a product category and expected capabilities. The Studio™ must have its own design system, workflows, data model, and product voice.
 
 ## 1. Source and working rules
 
@@ -22,7 +22,7 @@ Do not copy Techstyles branding, copy, proprietary artwork, or code. The screens
 
 ## 2. Product definition
 
-Custm.ink Studio is the operating system between apparel concept and factory production.
+The Studio™ is the operating system between apparel concept and factory production.
 
 <!-- amended 2026-09-05 -->
 Primary go-to-market: decorators and print shops moving from wholesale blanks to
@@ -413,7 +413,7 @@ Implement checkout, customer portal, plan changes, cancellation, webhook verific
 
 ## 12. UX and design system
 
-Preserve the current Custm.ink Studio direction:
+Preserve the current The Studio™ direction:
 
 - Deep ink navigation
 - White working surfaces

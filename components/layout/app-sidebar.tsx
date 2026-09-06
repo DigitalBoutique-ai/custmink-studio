@@ -6,6 +6,7 @@ import { CircleHelp, MoreHorizontal, PanelLeftClose } from "lucide-react";
 
 import { Icon } from "@/components/icon";
 import { BrandMark } from "@/components/layout/brand-mark";
+import { Wordmark } from "@/components/layout/wordmark";
 import { navGroups } from "@/lib/navigation";
 
 /** Active state is derived from the URL instead of the prototype's `activeNav` state. */
@@ -28,8 +29,7 @@ export function AppSidebar({
         <BrandMark />
         {!collapsed && (
           <div>
-            <strong>Custm.ink</strong>
-            <span>Studio</span>
+            <Wordmark />
           </div>
         )}
         <button className="icon-button collapse-button" onClick={onCollapse} aria-label="Collapse sidebar">

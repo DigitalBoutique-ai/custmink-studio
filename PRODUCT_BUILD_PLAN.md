@@ -1,4 +1,4 @@
-# Custm.ink Studio Product Build Plan
+# The Studio™ Product Build Plan
 
 ## Current prototype
 

@@ -15,7 +15,7 @@ Source: competitive teardown of Techpacker, Backbone PLM, Delogue, Centric and t
 AI-native tech pack tools (`docs/research/2026-09-05_techpack-market-teardown.md`),
 plus the gap analysis against this repo.
 
-- **Ownership: Custm.ink Studio is a DBAI first-party product.** Digital Boutique
+- **Ownership: The Studio™ is a DBAI first-party product.** Digital Boutique
   AI (Tim de Vallée, James) owns it. custm.ink is DBAI's house brand, not a
   client. Settled — the "confirm ownership before building" caveat is removed.
 - **Every external service is owned by a DBAI account, never a personal one.**
@@ -71,6 +71,39 @@ plus the gap analysis against this repo.
 - **Not relitigated:** Clerk vs Supabase auth, app-layer scoping vs Postgres RLS,
   React PDF vs Gotenberg, Inngest vs a Postgres queue. The existing choices are
   coherent and tested.
+
+## 2026-09-05 — Phase 2 begins: brands, BOM, and the rename
+
+- **The product is renamed to "The Studio™"**, trademark rendered small and
+  superscript. `custm.ink` remains a DBAI apparel brand and a domain, and
+  `custmink-studio` remains the GitHub, Vercel and Neon project identifier —
+  neither is the product name and neither changed. The name now lives in
+  `lib/brand.ts`; it was previously hardcoded in 25 page titles and two copies
+  of the wordmark.
+- **`brands` landed by expand → backfill → contract, across three migrations.**
+  A single migration declaring `brand_id NOT NULL` cannot run against a
+  populated table, so 0001 adds it nullable, `db:backfill-brands` assigns a
+  default brand per organization, and 0002 sets NOT NULL.
+- **BOM row values are copied from `materials`, not joined at read time.** A BOM
+  row is part of an immutable version snapshot; editing a library material must
+  not retroactively change a spec a factory has already quoted against.
+  `material_id` records the origin without creating the dependency.
+- **`source` defaults to `manual`.** A write path that forgets to set provenance
+  records the row as human-entered — wrong in the safe direction. Defaulting to
+  `ai_draft` would mark real work as unreviewed and erode trust in the flag.
+- **Server actions use `updateTag`, not `revalidateTag`.** Next 16 made
+  `revalidateTag` take a required cache profile and purge for future requests
+  only, while `updateTag` gives server actions read-your-own-writes. CLAUDE.md
+  named `revalidateTag`; the rule is updated rather than followed literally,
+  because following it literally serves a user the list that predates their own
+  save.
+- **BOM edits save on blur, not on keystroke.** One action per character is one
+  database wake per character, and Neon bills by wake-time.
+- **Deletes are soft.** Version snapshots and history must keep resolving the
+  row.
+- **A section with no session renders read-only.** Production has no session, so
+  offering inputs whose edits cannot persist would be a lie about the state of
+  the system.
 
 ## 2026-09-05 — factory PDF vertical slice
 

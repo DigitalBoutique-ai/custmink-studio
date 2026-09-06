@@ -1,4 +1,4 @@
-# Custm.ink Studio
+# The Studio™
 
 Multi-tenant SaaS where apparel brands build, review, version, share, and export
 factory-ready tech packs. Next.js 16 App Router · TypeScript strict · Tailwind 4 ·
@@ -69,12 +69,41 @@ These are the ones that get written wrong here. The global rules in
 
 ### Mutations
 
-- A server action does three things in order: `requireSession()` →
-  `assertCan(...)` → write → `revalidateTag(...)`.
-- **A server action without a `revalidateTag` is a bug, not a style choice.** Reads
-  are cached for an hour; without the tag the UI silently serves stale data.
+- A server action does four things in order: `requireSession()` →
+  `assertCan(...)` → write → invalidate the section's cache tag.
+- **A server action that does not invalidate is a bug, not a style choice.** Reads
+  are cached for an hour; without it the UI silently serves stale data.
+- **Use `updateTag(tag)`, not `revalidateTag(tag)`.** Next 16 changed this:
+  `revalidateTag` now takes a required cache-life profile and purges for
+  *future* requests, while `updateTag` exists for server actions and gives
+  read-your-own-writes. With `revalidateTag` the person who just saved a row can
+  be served the cached list that predates it — the exact failure this rule is
+  about. See `lib/actions/bom.ts`.
 - Tags come from the section registry (`lib/sections/registry.ts`), not string
   literals scattered through the codebase.
+
+### Brands
+
+- The hierarchy is organization → brands → collections → products. The
+  organization is the account; the **brand** is what a factory sees on the tech
+  pack. Anything brand-facing (logo, colour, PDF settings, currency, unit, and
+  the libraries) belongs on `brands`; `organization_settings` keeps org-level
+  defaults only.
+- Every product and collection carries `brand_id`, NOT NULL. New tenant-owned
+  tables that a factory sees should carry it too.
+- `custm.ink` is a DBAI apparel **brand** and a domain. It is not the product's
+  name — the product is The Studio™, and its name lives in `lib/brand.ts`.
+
+### Provenance
+
+- Every row table AI can write to carries `source`
+  (`manual | library | import | api | ai_draft`) and `accepted_at`. Spread the
+  `provenance` helper in `db/schema.ts` rather than redeclaring the columns.
+- `source` defaults to `manual`: a path that forgets to set it records the row
+  as human-entered, which is wrong in the safe direction. Defaulting to
+  `ai_draft` would mark real work as unreviewed.
+- `tests/schema-rules.test.ts` fails if one of the six listed tables lacks
+  either column.
 
 ### Drizzle
 
@@ -112,13 +141,22 @@ db/schema.ts                          table + indexes
 drizzle/NNNN_*.sql                    generated migration
 lib/sections/registry.ts              entry: id, table, capability, tag
 lib/data/<section>.ts                 server-only reads, cache() + unstable_cache
-lib/actions/<section>.ts              server actions, assertCan + revalidateTag
+lib/<section>/rows.ts                 pure: zod input schema + display mapping
+lib/actions/<section>.ts              server actions, assertCan + updateTag
 components/techpack/panels/<x>.tsx    client panel
 app/(app)/products/[productId]/<x>/   route
-tests/sections/<section>.test.ts      tests
+tests/<section>.test.ts               tests
 ```
 
+`lib/<section>/rows.ts` is not optional decoration: `server-only` throws under
+Vitest, so validation and mapping placed inside `lib/data/` or `lib/actions/`
+cannot be tested at all. Keep the part that decides *what a valid row is*
+outside the server boundary.
+
 Reference implementations already in the repo:
+
+- **`db/schema.ts` + `lib/data/bom.ts` + `lib/actions/bom.ts` + `lib/bom/rows.ts`
+  — the complete Phase 2 slice.** Start here for any new section.
 
 - `lib/data/products.ts` — server-only reads, React `cache()` for per-request
   dedupe, `unstable_cache` with an org-scoped tag, `assertCan`, tenant filter
@@ -134,8 +172,14 @@ Reference implementations already in the repo:
 
 ## Current state — read before assuming
 
-Phase 1 is complete; phases 2–6 are not. Two Phase-1 bridges exist and will be
-removed, so do not build on them:
+Phase 1 is complete. **Phase 2 is in progress**: `brands`, `materials` and
+`bom_items` have shipped with real persistence, and the BOM section reads and
+writes Postgres through `lib/data/bom.ts` and `lib/actions/bom.ts` — copy that
+slice rather than inventing a new shape. Colorways, measurements, construction
+and packaging still read `lib/demo-data.ts`; `tests/bom.test.ts` tracks which,
+and fails if the list falls out of step with the schema in either direction.
+
+One Phase-1 bridge remains, so do not build on it:
 
 - **`lib/auth/session.ts` has no real auth provider.** It returns a development
   session gated behind `ALLOW_DEV_SESSION`, set on preview only. Production has no
@@ -144,6 +188,7 @@ removed, so do not build on them:
 - **`lib/draft-store.ts` keeps created tech packs in `localStorage`** because no
   create action exists yet. Phase 2 replaces it with a server action.
 
-Colorways, BOM rows, measurements, and the workflow lists still read from
-`lib/demo-data.ts`. Their tables arrive with the Phase 2 screens; the reader
-signatures in `lib/data/` are already product-scoped so only the bodies change.
+Colorways, measurements, and the workflow lists still read from
+`lib/demo-data.ts`. Their tables arrive with the remaining Phase 2 screens; the
+reader signatures in `lib/data/` are already product-scoped so only the bodies
+change.
