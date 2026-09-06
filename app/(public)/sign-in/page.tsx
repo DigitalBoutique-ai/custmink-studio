@@ -11,7 +11,7 @@ export default function SignInPage() {
     <PublicShell
       eyebrow="Welcome back"
       title={`Sign in to ${PRODUCT_NAME_TM}`}
-      subtitle="Clerk-hosted authentication is wired up in Phase 1B. This route reserves the URL so redirects and invitations resolve correctly."
+      subtitle="Sign-in is not open yet. The Studio is in a private pilot, and accounts are issued by invitation while authentication is completed."
     />
   );
 }

@@ -36,7 +36,7 @@ is done.
 | CI | `.github/workflows/ci.yml`, green on the last two runs |
 | Repo | `DigitalBoutique-ai/custmink-studio` (private), Vercel git-connected — pushes to `main` deploy |
 | Neon | `custmink-studio` / `purple-king-22972792`, us-east-1, PG 17, 0.25 CU, 5-min scale-to-zero |
-| Production | https://techpack.intlo.com — **public, no auth gate** (see below) |
+| Production | https://techpack.intlo.com — every `(app)` route redirects to `/sign-in` until a provider is wired (item 1) |
 | Stable preview alias | https://custmink-studio-git-main-digitalboutique.vercel.app |
 
 **Verified this session** (`npm run verify`, exit 0): typecheck, eslint, 124
