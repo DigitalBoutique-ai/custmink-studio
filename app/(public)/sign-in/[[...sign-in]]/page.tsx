@@ -24,7 +24,8 @@ export default function SignInPage() {
       title={`Sign in to ${PRODUCT_NAME}`}
       subtitle="The Studio is in a private pilot. Accounts are issued by invitation — sign in with the email your organization set up."
     >
-      <SignIn forceRedirectUrl="/dashboard" />
+      {/* The shell carries the heading; Clerk's own would repeat it with the resource name. */}
+      <SignIn forceRedirectUrl="/dashboard" signUpUrl="/sign-up" appearance={{ elements: { header: "hidden" } }} />
     </PublicShell>
   );
 }

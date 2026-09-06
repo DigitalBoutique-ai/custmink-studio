@@ -23,7 +23,7 @@ export default function SignUpPage() {
       title={`Create your ${PRODUCT_NAME} account`}
       subtitle="Use the email address your organization invited. You will claim your seat right after."
     >
-      <SignUp forceRedirectUrl="/welcome" />
+      <SignUp forceRedirectUrl="/welcome" signInUrl="/sign-in" appearance={{ elements: { header: "hidden" } }} />
     </PublicShell>
   );
 }
