@@ -8,8 +8,18 @@ factory-ready tech packs. `CLAUDE_CODE_MASTER_PROMPT.md` is the product spec;
 `CLAUDE.md` is the working agreement for anyone (human or agent) touching this
 repo. Read both before changing anything.
 
-Last updated: 2026-09-05.
+Last updated: 2026-09-06.
 
+> **Read `git status` before staging anything.** As of this handoff a second
+> session is wiring Clerk in this checkout, **uncommitted**: `proxy.ts`,
+> `ClerkProvider` in `app/layout.tsx`, real session resolution in
+> `lib/auth/session.ts`, `app/(onboarding)/welcome`, `lib/seats/`,
+> `lib/auth/claim.ts`, Clerk catch-all sign-in/sign-up routes (the old pages
+> deleted), `scripts/add-member.ts`, `tests/seat.test.ts`, and `@clerk/nextjs`
+> in `package.json`. That work is blocked on Clerk keys. It is not in any
+> commit. **Do not `git add -A`**; commit by explicit path, and do not build on
+> those files until they land — see item 1 and surprise #25.
+>
 > **The 2026-09-05 scope amendment has been applied.** It is recorded in
 > `docs/DECISIONS.md`, marked `<!-- amended 2026-09-05 -->` in the master
 > prompt, and its two irreversible schema rules (`brands` + `brand_id`, and
@@ -30,7 +40,7 @@ is done.
 | | |
 |---|---|
 | Source | 103 files across `app/ components/ lib/ db/ types/ tests/ scripts/ tools/` |
-| Tests | 225 passing, 13 files |
+| Tests | 225 passing, 13 files (`npm run verify` exit 0 at handoff; `npm run build` exit 0) |
 | Schema | 12 tables of ~48, 4 migrations applied (`0000`–`0003`) |
 | Spec | `CLAUDE_CODE_MASTER_PROMPT.md` + the 2026-09-05 amendment; decisions in `docs/DECISIONS.md`, accounts in `docs/ACCOUNTS.md` |
 | CI | `.github/workflows/ci.yml`, green on the last two runs |
@@ -39,10 +49,14 @@ is done.
 | Production | https://techpack.intlo.com — `/`, `/pricing`, `/demo` are the static marketing site; every `(app)` route redirects to `/sign-in` until a provider is wired (item 1) |
 | Stable preview alias | https://custmink-studio-git-main-digitalboutique.vercel.app |
 
-**Verified this session** (`npm run verify`, exit 0): typecheck, eslint, 124
-tests, Neon compute preflight. `npm run build` exit 0. **Not run:** Playwright
-(none written yet), deployment route sweep, `db:migrate` (no pending
-migrations).
+**Verified at handoff** (`npm run verify`, exit 0): typecheck, eslint, 225
+tests across 13 files, Neon compute preflight. `npm run build` exit 0 on the
+working tree (which includes the other session's uncommitted Clerk files) and
+on HEAD alone in a throwaway worktree. Production checked after the last push:
+`/` `/pricing` `/demo` `/sitemap.xml` 200, `x-vercel-cache: HIT`,
+`/dashboard` → 307 `/sign-in`. **Not run:** Playwright end-to-end (none
+written; the marketing pages were checked interactively), `db:migrate` (no
+pending migrations).
 
 What actually works end to end: the full prototype UI on real routes, products
 and readiness read from Postgres scoped to an organization, the create-tech-pack
@@ -56,14 +70,27 @@ sequencing, cost model, and the reasoning behind the decisions below.
 
 ## Pick up here
 
-**1. Clerk credentials — [DECISION, and the hard blocker].** Nothing
-tenant-real ships without it. `lib/auth/session.ts` returns a development
-session gated behind `ALLOW_DEV_SESSION`, set on preview only. Production has no
-session and therefore renders the demo dataset. Wiring it is replacing the body
-of `resolveSession` — every caller already goes through `requireSession()`, so
-no call site changes. Then delete `DEV_ORGANIZATION_ID`, `DEV_USER_ID`, and
-`ALLOW_DEV_SESSION`. **`auth()` may only be called inside `app/(app)/**`** — the
-lint rule `custmink/no-dynamic-in-public` enforces this; do not disable it.
+**1. Land Clerk — [WORK in flight elsewhere, then a DECISION].** Another
+session has the integration written but uncommitted in this tree (top of this
+file). It is blocked on Clerk keys: the user was installing the Vercel
+Marketplace Clerk integration at handoff time. What it does, from reading the
+diff: `proxy.ts` runs `clerkMiddleware()` on every non-static path (Next 16's
+name for middleware); `lib/auth/session.ts` resolves Clerk identity → `users` →
+`memberships` and returns null for a signed-in person with no seat; the `(app)`
+layout sends no-session to `/sign-in` and no-seat to `/welcome`; `lib/seats/`
+and `scripts/add-member.ts` claim a seat. Committed already (b6fd7fe): the
+`(app)` layout redirects to `/sign-in` without a session, so **production's
+workspace is a login wall right now** and `/dashboard` → 307 `/sign-in`.
+
+To pick this up: coordinate with that session if it is still alive
+(`ListAgents`; it was `custm-ink-d7`), or, if it is gone, review its diff, put
+real keys in Vercel env + `.env.local`, run the gate, and commit it by path.
+Then delete `DEV_ORGANIZATION_ID`, `DEV_USER_ID`, `ALLOW_DEV_SESSION`.
+**`auth()` may only be called inside `app/(app)/**` and `app/(onboarding)/**`**;
+`custmink/no-dynamic-in-public` now also covers `app/(marketing)/**` and
+`proxy.ts`. With a placeholder `pk_test` key the dev server 500s and
+`clerkMiddleware` bounces browsers to a handshake URL — that is Clerk, not the
+app.
 
 **2. Confirm Exora's first style is a hoodie — [DECISION, needs the client].**
 Exora Ink is now the designated pilot (see "What shipped"). `hoodie` is the only
@@ -97,9 +124,10 @@ done. The registry it generates against already exists.
 hand-rolled Actions workflow that creates and reaps branches is ~200 lines of
 rot.
 
-**8. `app/sitemap.ts` and `scripts/verify-routes.ts` — [WORK].** Both derive
-from `lib/sections/registry.ts`. This is what stops the route-200 check being a
-manual chore.
+**8. `scripts/verify-routes.ts` — [WORK].** Derive the post-deploy route-200
+sweep from `lib/sections/registry.ts` plus `lib/marketing/nav.ts`, so it stops
+being a manual curl loop. `app/sitemap.ts` now exists but is marketing-only by
+design (the workspace is disallowed in robots); do not add app routes to it.
 
 **9. `tests/migrations.test.ts` — [WORK].** Regex `drizzle/*.sql` for
 `DROP TABLE|DROP COLUMN|ALTER COLUMN … TYPE`, failing unless annotated
@@ -231,6 +259,11 @@ that dead-ends at a login wall is worse than no demo.
 - `npm run pdf:preview` + `pdftoppm` produced `public/pdf-cover.png`;
   `public/og.png` is a 1200×630 screenshot of the hero. Both static; neither is
   a route.
+- The footer carries "Powered by" and the DBAI agency mark, centered.
+  `public/dbai-agency.png` is the logo knocked out of its black background and
+  recoloured to ink (`public/dbai-agency-white.png` for dark surfaces); the
+  source is `~/Code/Logo/dbai_agency.png`. Header and footer share one
+  `<Wordmark/>`, asserted by eye and by the shared component.
 
 ---
 
