@@ -355,9 +355,8 @@ async function main(): Promise<void> {
   console.log("Seeded brands:", [...brands.keys()].join(", "));
   console.log("Seeded BOM rows:", hoodieId ? bomSeeds.length : 0);
   console.log("Seeded owner:", owner.id);
-  console.log("\nAdd these to .env.local to use the development session:");
-  console.log(`DEV_ORGANIZATION_ID="${organization.id}"`);
-  console.log(`DEV_USER_ID="${owner.id}"`);
+  console.log("\nTo sign in to this organization, provision a seat for your own email:");
+  console.log("  npm run member:add -- --email you@example.com --org digital-boutique-ai --role owner");
 }
 
 main().catch((error) => {

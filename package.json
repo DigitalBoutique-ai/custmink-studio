@@ -21,9 +21,11 @@
     "verify": "npm run typecheck && npm run lint && npm run test && npm run preflight",
     "flats:preview": "tsx scripts/flat-preview.ts",
     "pdf:preview": "esbuild scripts/pdf-preview.mts --bundle --platform=node --format=esm --packages=external --alias:@=. --outfile=node_modules/.cache/pdf-preview.mjs --log-level=warning && node node_modules/.cache/pdf-preview.mjs",
-    "db:backfill-brands": "tsx scripts/backfill-brands.ts"
+    "db:backfill-brands": "tsx scripts/backfill-brands.ts",
+    "member:add": "tsx scripts/add-member.ts"
   },
   "dependencies": {
+    "@clerk/nextjs": "^7.9.1",
     "@neondatabase/serverless": "^1.0.1",
     "@react-pdf/renderer": "^4.9.0",
     "class-variance-authority": "0.7.1",

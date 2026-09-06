@@ -46,7 +46,7 @@ is done.
 | CI | `.github/workflows/ci.yml`, green on the last two runs |
 | Repo | `DigitalBoutique-ai/custmink-studio` (private), Vercel git-connected — pushes to `main` deploy |
 | Neon | `custmink-studio` / `purple-king-22972792`, us-east-1, PG 17, 0.25 CU, 5-min scale-to-zero |
-| Production | https://techpack.intlo.com — `/`, `/pricing`, `/demo` are the static marketing site; every `(app)` route redirects to `/sign-in` until a provider is wired (item 1) |
+| Production | https://techpack.intlo.com — `/`, `/pricing`, `/demo` are the static marketing site; every `(app)` route is behind Clerk sign-in; no seats provisioned yet (item 1) |
 | Stable preview alias | https://custmink-studio-git-main-digitalboutique.vercel.app |
 
 **Verified at handoff** (`npm run verify`, exit 0): typecheck, eslint, 225
@@ -70,27 +70,31 @@ sequencing, cost model, and the reasoning behind the decisions below.
 
 ## Pick up here
 
-**1. Land Clerk — [WORK in flight elsewhere, then a DECISION].** Another
-session has the integration written but uncommitted in this tree (top of this
-file). It is blocked on Clerk keys: the user was installing the Vercel
-Marketplace Clerk integration at handoff time. What it does, from reading the
-diff: `proxy.ts` runs `clerkMiddleware()` on every non-static path (Next 16's
-name for middleware); `lib/auth/session.ts` resolves Clerk identity → `users` →
-`memberships` and returns null for a signed-in person with no seat; the `(app)`
-layout sends no-session to `/sign-in` and no-seat to `/welcome`; `lib/seats/`
-and `scripts/add-member.ts` claim a seat. Committed already (b6fd7fe): the
-`(app)` layout redirects to `/sign-in` without a session, so **production's
-workspace is a login wall right now** and `/dashboard` → 307 `/sign-in`.
+**1. Clerk is live; the first seat is the next step — [WORK, needs the user's
+email].** Landed 2026-09-06. Clerk (Marketplace resource `custmink-studio-clerk`,
+a *development* instance — `pk_test`/`sk_test`) is identity only; authorization
+is a **seat**: a `users` row keyed by email whose `external_id` is
+`pending:<email>` until claimed, plus a `memberships` row. Provision one with
+`npm run member:add -- --email <addr> --org <slug> --role owner --create-org "<Name>"`
+against the target `DATABASE_URL` (production has no organizations — it was
+never seeded), then the person signs in, lands on `/welcome`, and clicks "Claim
+my seat", which links the row to their Clerk id (`lib/auth/claim.ts`, the one
+write that precedes `requireSession()`). A Clerk account with no seat sees "No
+seat has been set up for this email" — sign-up is open but grants nothing.
 
-To pick this up: coordinate with that session if it is still alive
-(`ListAgents`; it was `custm-ink-d7`), or, if it is gone, review its diff, put
-real keys in Vercel env + `.env.local`, run the gate, and commit it by path.
-Then delete `DEV_ORGANIZATION_ID`, `DEV_USER_ID`, `ALLOW_DEV_SESSION`.
-**`auth()` may only be called inside `app/(app)/**` and `app/(onboarding)/**`**;
-`custmink/no-dynamic-in-public` now also covers `app/(marketing)/**` and
-`proxy.ts`. With a placeholder `pk_test` key the dev server 500s and
-`clerkMiddleware` bounces browsers to a handshake URL — that is Clerk, not the
-app.
+Shape: `proxy.ts` runs `clerkMiddleware()` on every non-static path;
+`lib/auth/session.ts` resolves Clerk `auth()` → `users` → first membership;
+`app/(app)/layout.tsx` sends no-session to `/sign-in` and signed-in-but-no-seat
+to `/welcome`; `lib/seats/rules.ts` is the pure decision, tested in
+`tests/seat.test.ts`. `/sign-in` and `/sign-up` are optional catch-alls with
+`generateStaticParams` so the bare routes prerender (Clerk's sub-steps render on
+demand, cached 1h). CI builds with `vars.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` —
+public by design; the secret key is not needed to build.
+
+Still TODO before real customers: a **production Clerk instance** with a custom
+domain (see `docs/ACCOUNTS.md`), and a workspace switcher — `pickMembership`
+takes the first membership, so a person in two organizations always lands in
+the older one. The `DEV_*` / `ALLOW_DEV_SESSION` code path is gone.
 
 **2. Confirm Exora's first style is a hoodie — [DECISION, needs the client].**
 Exora Ink is now the designated pilot (see "What shipped"). `hoodie` is the only

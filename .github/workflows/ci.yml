@@ -40,5 +40,10 @@ jobs:
       # back to the demo dataset without a session, so the build must not need a
       # database. If this step ever starts requiring one, something now wakes
       # Postgres during a render.
+      # Clerk's publishable key is public by design (pk_test_…); the build
+      # prerenders <ClerkProvider> and refuses without it. The secret key is
+      # not needed to build and is deliberately absent here.
       - name: Build
         run: npm run build
+        env:
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ vars.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}

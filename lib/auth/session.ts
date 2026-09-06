@@ -1,20 +1,25 @@
 import "server-only";
 
+import { auth, currentUser } from "@clerk/nextjs/server";
+import { and, eq, isNull } from "drizzle-orm";
 import { cache } from "react";
 
+import { db, schema } from "@/db";
 import type { Role } from "@/lib/auth/permissions";
+import { type ClerkIdentity, normalizeEmail, pickMembership } from "@/lib/seats/rules";
+import { hasDatabase } from "@/lib/env";
 
 /**
  * Server-side session resolution.
  *
- * Phase 1B ships the boundary, not the provider: Clerk needs account
- * credentials that are not configured yet (see docs/reports/phase-1.md). Every
- * caller already goes through `requireSession()`, so wiring Clerk means
- * replacing the body of `resolveSession` — no call site changes.
+ * Clerk answers "who is this?"; the `users` → `memberships` rows answer "which
+ * workspace, and what may they do?". Both are required for a session. A person
+ * who is signed in but holds no seat gets `null` here and is sent to `/welcome`
+ * by the `(app)` layout to claim one — see `lib/seats/rules.ts`.
  *
- * Until then a development session is returned, and only when
- * `ALLOW_DEV_SESSION` is set. In production with no provider configured the app
- * refuses to hand out a session rather than defaulting to an authenticated one.
+ * `auth()` reads the request cookie, so anything that calls this renders
+ * dynamically. That is why it is only reachable from `app/(app)/**` and
+ * `app/(onboarding)/**`, never a public route or the root layout.
  */
 
 export type Session = {
@@ -32,25 +37,49 @@ export class UnauthenticatedError extends Error {
   }
 }
 
-function devSessionAllowed(): boolean {
-  return process.env.NODE_ENV !== "production" || process.env.ALLOW_DEV_SESSION === "true";
-}
+/** The signed-in Clerk identity, or null. Verified primary email only. */
+export const getIdentity = cache(async (): Promise<ClerkIdentity | null> => {
+  const { userId } = await auth();
+  if (!userId) return null;
+
+  const user = await currentUser();
+  if (!user) return null;
+
+  const primary = user.emailAddresses.find((address) => address.id === user.primaryEmailAddressId);
+  if (!primary || primary.verification?.status !== "verified") return null;
+
+  const name = [user.firstName, user.lastName].filter(Boolean).join(" ") || null;
+  return { userId, email: normalizeEmail(primary.emailAddress), name, avatarUrl: user.imageUrl ?? null };
+});
 
 const resolveSession = cache(async (): Promise<Session | null> => {
-  // TODO(Phase 1B, blocked on credentials): replace with Clerk `auth()` plus a
-  // lookup of the mapped users/organizations/memberships rows.
-  if (!devSessionAllowed()) return null;
+  const { userId } = await auth();
+  if (!userId || !hasDatabase()) return null;
 
-  const organizationId = process.env.DEV_ORGANIZATION_ID;
-  const userId = process.env.DEV_USER_ID;
-  if (!organizationId || !userId) return null;
+  const rows = await db()
+    .select({
+      userId: schema.users.id,
+      email: schema.users.email,
+      name: schema.users.name,
+      organizationId: schema.memberships.organizationId,
+      role: schema.memberships.role,
+    })
+    .from(schema.users)
+    .innerJoin(schema.memberships, eq(schema.memberships.userId, schema.users.id))
+    .innerJoin(schema.organizations, eq(schema.organizations.id, schema.memberships.organizationId))
+    .where(and(eq(schema.users.externalId, userId), isNull(schema.organizations.deletedAt)))
+    .orderBy(schema.memberships.createdAt);
+
+  const membership = pickMembership(rows);
+  const user = rows[0];
+  if (!membership || !user) return null;
 
   return {
-    userId,
-    organizationId,
-    role: "owner",
-    email: "tim@custmink.studio",
-    name: "Tim de Vallée",
+    userId: user.userId,
+    organizationId: membership.organizationId,
+    role: membership.role,
+    email: user.email,
+    name: user.name ?? user.email,
   };
 });
 

@@ -1,3 +1,4 @@
+import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
 
 import "./globals.css";
@@ -20,7 +21,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        {/* Inside <body>, static by default: it must not opt public routes into dynamic rendering. */}
+        <ClerkProvider>{children}</ClerkProvider>
+      </body>
     </html>
   );
 }

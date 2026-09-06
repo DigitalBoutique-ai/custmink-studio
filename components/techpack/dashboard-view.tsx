@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { dashboardMetrics } from "@/lib/demo-data";
 
-export function DashboardView() {
+export function DashboardView({ firstName }: { firstName: string }) {
   const { openCreate } = useStudioShell();
   const { products } = useProducts();
   const firstProduct = products[0];
@@ -23,7 +23,7 @@ export function DashboardView() {
         <div className="page-heading">
           <div>
             <p className="eyebrow">Monday, August 31</p>
-            <h1>Good afternoon, Tim.</h1>
+            <h1>Good afternoon, {firstName}.</h1>
             <p>Your product pipeline is moving. Two styles need decisions this week.</p>
           </div>
           <Button onClick={openCreate}>

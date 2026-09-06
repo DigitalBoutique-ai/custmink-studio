@@ -472,3 +472,35 @@ svg { width: 18px; height: 18px; }
   line-height: 1.6;
   color: var(--subtle);
 }
+
+.public-actions {
+  display: grid;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.public-error {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--destructive);
+  margin: 0;
+}
+
+.public-link {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  font-size: 13px;
+  color: var(--subtle);
+  text-decoration: underline;
+  cursor: pointer;
+  justify-self: start;
+}
+
+/* Clerk's card sits inside .public-card; drop its own chrome so it is not a card in a card. */
+.public-card .cl-cardBox {
+  box-shadow: none;
+  border: 0;
+  width: 100%;
+}

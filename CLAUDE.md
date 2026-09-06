@@ -57,9 +57,9 @@ These are the ones that get written wrong here. The global rules in
 
 ### Rendering — this is the expensive mistake
 
-- **Clerk's `auth()` may only be called inside `app/(app)/**`.** Never in
-  `app/layout.tsx`, never under `app/(public)/**`, never in middleware matching a
-  public path. `auth()` reads cookies, so one line in the root layout opts the
+- **Clerk's `auth()` may only be called inside `app/(app)/**` and
+  `app/(onboarding)/**`.** Never in `app/layout.tsx`, never under
+  `app/(public)/**`, never in `proxy.ts` logic for a public path. `auth()` reads cookies, so one line in the root layout opts the
   entire app into dynamic rendering and silently voids every `revalidate` in the
   tree. Bot traffic then keeps Neon awake continuously. This is the single
   highest-probability compute regression in this repo.
@@ -179,12 +179,16 @@ slice rather than inventing a new shape. Colorways, measurements, construction
 and packaging still read `lib/demo-data.ts`; `tests/bom.test.ts` tracks which,
 and fails if the list falls out of step with the schema in either direction.
 
+Auth is Clerk (Vercel Marketplace) for identity plus a **seat** in Postgres for
+authorization: `users.external_id` is the Clerk user id, and a session needs a
+`memberships` row. Seats are provisioned by email
+(`npm run member:add -- --email … --org <slug> --role owner`) and claimed at
+`/welcome` on first sign-in — `lib/seats/rules.ts` is the decision,
+`lib/auth/claim.ts` the one write that precedes `requireSession()`. Creating a
+Clerk account grants nothing on its own.
+
 One Phase-1 bridge remains, so do not build on it:
 
-- **`lib/auth/session.ts` has no real auth provider.** It returns a development
-  session gated behind `ALLOW_DEV_SESSION`, set on preview only. Production has no
-  session and therefore renders the demo dataset. Wiring Clerk means replacing the
-  body of `resolveSession` — every caller already goes through `requireSession()`.
 - **`lib/draft-store.ts` keeps created tech packs in `localStorage`** because no
   create action exists yet. Phase 2 replaces it with a server action.
 
