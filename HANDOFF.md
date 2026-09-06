@@ -495,6 +495,16 @@ will (correctly) refuse to pass it.
 
 ---
 
+## Project skills
+
+`.claude/skills/` holds Clerk's official agent skills (`clerk-nextjs-patterns`,
+`clerk-orgs`, `clerk-webhooks`, `clerk-backend-api`, `clerk-custom-ui`,
+`clerk-setup`), installed by `vercel integration add clerk` on 2026-09-06 and
+pinned by `skills-lock.json`. The files live in `.agents/skills/`; `.claude/`
+symlinks to them. Load one with the Skill tool before touching Clerk orgs or
+webhooks — they are the vendor's current docs, not memory. Re-sync with
+`npx skills add https://github.com/clerk/skills`.
+
 ## Commands
 
 ```bash
