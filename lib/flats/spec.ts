@@ -59,14 +59,23 @@ export const flatSpecV1Schema = z
 export type FlatSpecV1 = z.infer<typeof flatSpecV1Schema>;
 export type Neckline = z.infer<typeof necklineSchema>;
 
-/** The Riviera Oversized Hoodie from the seed data, as a parameter object. */
+/**
+ * The Riviera Oversized Hoodie from the seed data, as a parameter object.
+ *
+ * `sleeve` was `sleeveless` until 2026-09-05, which contradicted three other
+ * places the same garment is described: the measurement rows specify "P03
+ * sleeve length from shoulder, 58-62 cm", the BOM specifies 2x2 rib for
+ * "cuffs / waistband", and this object sets `cuff: "ribbed"` — none of which a
+ * sleeveless garment has. The contradiction only became visible once the flat
+ * and the measurement table appeared on facing pages of the same PDF.
+ */
 export const RIVIERA_HOODIE: FlatSpecV1 = {
   version: 1,
   templateId: "hoodie",
   silhouette: "oversized",
   fit: "relaxed",
   bodyLength: "regular",
-  sleeve: "sleeveless",
+  sleeve: "long",
   neckline: { kind: "hood", layers: 2, drawcord: true },
   placket: "none",
   pocket: "kangaroo",

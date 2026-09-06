@@ -1,4 +1,5 @@
 import type { FlatSpecV1 } from "@/lib/flats/spec";
+import { type FlatStroke, strokeClassName } from "@/lib/flats/style";
 
 /**
  * Parametric hoodie technical flat.
@@ -15,13 +16,52 @@ import type { FlatSpecV1 } from "@/lib/flats/spec";
 export type Point = { x: number; y: number };
 export type FlatView = "front" | "back";
 
+/**
+ * One drawn element, before it is committed to a rendering technology.
+ *
+ * The template emits these rather than markup so the browser SVG and the
+ * React PDF drawing are two serializations of one geometry instead of two
+ * drawings that have to be kept in agreement by hand.
+ */
+export type FlatElement =
+  | { kind: "path"; d: string; stroke: FlatStroke }
+  | {
+      kind: "rect";
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+      stroke: FlatStroke;
+    };
+
+/** Elements carry a group id so callouts and artwork can target `#pocket`. */
+export type FlatGroup = { id: string; elements: FlatElement[] };
+
 export type RenderedFlat = {
   viewBox: string;
   /** SVG markup without the outer <svg> element, so callers control sizing. */
   body: string;
+  /** The same drawing before serialization — what the PDF renderer consumes. */
+  groups: FlatGroup[];
   /** Named attachment points for artwork placement and numbered callouts. */
   anchors: Record<string, Point>;
 };
+
+/** Serializes groups to SVG markup. Class-based, so the stylesheet can tint. */
+export function serializeGroups(groups: FlatGroup[]): string {
+  return groups
+    .map(({ id, elements }) => {
+      const markup = elements
+        .map((element) =>
+          element.kind === "path"
+            ? `<path d="${element.d}" class="${strokeClassName(element.stroke)}" />`
+            : `<rect x="${n(element.x)}" y="${n(element.y)}" width="${n(element.width)}" height="${n(element.height)}" class="${strokeClassName(element.stroke)}" />`,
+        )
+        .join("");
+      return `<g id="${id}">${markup}</g>`;
+    })
+    .join("");
+}
 
 export const VIEW_BOX = { width: 400, height: 560 } as const;
 
@@ -197,78 +237,108 @@ function patchPocketPath(m: Measurements): string {
 }
 
 /** Ribbing is drawn as a band with vertical ticks, the way a flat conventionally shows it. */
-function ribbingBand(x1: number, x2: number, y: number, height: number): string {
+function ribbingBand(x1: number, x2: number, y: number, height: number): FlatElement[] {
   const ticks: string[] = [];
   const step = 9;
   for (let x = x1 + step; x < x2; x += step) {
     ticks.push(`M ${n(x)} ${n(y)} L ${n(x)} ${n(y + height)}`);
   }
   return [
-    `<rect x="${n(x1)}" y="${n(y)}" width="${n(x2 - x1)}" height="${n(height)}" class="flat-rib" />`,
-    `<path d="${ticks.join(" ")}" class="flat-rib-tick" />`,
-  ].join("");
+    { kind: "rect", x: x1, y, width: x2 - x1, height, stroke: "rib" },
+    { kind: "path", d: ticks.join(" "), stroke: "rib-tick" },
+  ];
 }
 
 export function renderHoodie(spec: FlatSpecV1, view: FlatView): RenderedFlat {
   const m = measurementsFor(spec);
   const neckDrop = view === "front" ? FRONT_NECK_DROP : BACK_NECK_DROP;
-  const parts: string[] = [];
+  const groups: FlatGroup[] = [];
 
   // Hood sits behind the body on the front view and in front of it on the back.
-  const hood =
-    spec.neckline.kind === "hood"
-      ? hoodPaths(m, spec.neckline.layers)
-          .map((d, index) => `<path d="${d}" class="${index === 0 ? "flat-hood" : "flat-line"}" />`)
-          .join("")
-      : "";
+  const hood: FlatGroup = {
+    id: "hood",
+    elements:
+      spec.neckline.kind === "hood"
+        ? hoodPaths(m, spec.neckline.layers).map((d, index) => ({
+            kind: "path" as const,
+            d,
+            stroke: index === 0 ? ("hood" as const) : ("line" as const),
+          }))
+        : [],
+  };
 
-  if (view === "front") parts.push(`<g id="hood">${hood}</g>`);
+  if (view === "front") groups.push(hood);
 
-  parts.push(`<g id="body"><path d="${bodyPath(m, neckDrop)}" class="flat-body" /></g>`);
-
-  if (view === "back") parts.push(`<g id="hood">${hood}</g>`);
-
+  // Sleeves are filled panels drawn *before* the body, so the body occludes
+  // them at the armhole and the garment reads as one silhouette. Drawn after
+  // the body with `fill: none` they were correct geometry that looked wrong the
+  // moment a colorway tinted the flat: the body filled and the sleeves stayed
+  // white. Same fix the hood already uses.
   const sleeves = [sleevePath(m, -1), sleevePath(m, 1)]
-    .filter(Boolean)
-    .map((d) => `<path d="${d}" class="flat-line" />`)
-    .join("");
-  if (sleeves) parts.push(`<g id="sleeves">${sleeves}</g>`);
+    .filter((d): d is string => Boolean(d))
+    .map((d) => ({ kind: "path" as const, d, stroke: "body" as const }));
+  if (sleeves.length) groups.push({ id: "sleeves", elements: sleeves });
+
+  groups.push({
+    id: "body",
+    elements: [{ kind: "path", d: bodyPath(m, neckDrop), stroke: "body" }],
+  });
+
+  if (view === "back") groups.push(hood);
 
   // Pockets and plackets are front-only construction.
   if (view === "front") {
     if (spec.pocket === "kangaroo") {
-      parts.push(`<g id="pocket"><path d="${kangarooPocketPath(m)}" class="flat-line" /></g>`);
+      groups.push({
+        id: "pocket",
+        elements: [{ kind: "path", d: kangarooPocketPath(m), stroke: "line" }],
+      });
     } else if (spec.pocket === "patch" || spec.pocket === "welt") {
-      parts.push(`<g id="pocket"><path d="${patchPocketPath(m)}" class="flat-line" /></g>`);
+      groups.push({
+        id: "pocket",
+        elements: [{ kind: "path", d: patchPocketPath(m), stroke: "line" }],
+      });
     }
 
     if (spec.placket !== "none") {
       const zipBottom = spec.placket === "full-zip" ? m.hemY : CHEST_Y + 40;
-      parts.push(
-        `<g id="placket"><path d="M ${n(CENTER_X)} ${n(NECK_Y + neckDrop)} L ${n(CENTER_X)} ${n(zipBottom)}" class="flat-zip" /></g>`,
-      );
+      groups.push({
+        id: "placket",
+        elements: [
+          {
+            kind: "path",
+            d: `M ${n(CENTER_X)} ${n(NECK_Y + neckDrop)} L ${n(CENTER_X)} ${n(zipBottom)}`,
+            stroke: "zip",
+          },
+        ],
+      });
     }
 
     if (spec.neckline.kind === "hood" && spec.neckline.drawcord) {
-      parts.push(
-        `<g id="drawcord"><path d="M ${n(CENTER_X - 16)} ${n(NECK_Y + neckDrop - 2)} L ${n(CENTER_X - 18)} ${n(NECK_Y + neckDrop + 42)}" class="flat-line" /><path d="M ${n(CENTER_X + 16)} ${n(NECK_Y + neckDrop - 2)} L ${n(CENTER_X + 18)} ${n(NECK_Y + neckDrop + 42)}" class="flat-line" /></g>`,
-      );
+      groups.push({
+        id: "drawcord",
+        elements: [-1, 1].map((side) => ({
+          kind: "path" as const,
+          d: `M ${n(CENTER_X + side * 16)} ${n(NECK_Y + neckDrop - 2)} L ${n(CENTER_X + side * 18)} ${n(NECK_Y + neckDrop + 42)}`,
+          stroke: "line" as const,
+        })),
+      });
     }
   }
 
-  const trims: string[] = [];
+  const trims: FlatElement[] = [];
   if (spec.hem === "ribbed") {
-    trims.push(ribbingBand(CENTER_X - m.hem, CENTER_X + m.hem, m.hemY - 22, 22));
+    trims.push(...ribbingBand(CENTER_X - m.hem, CENTER_X + m.hem, m.hemY - 22, 22));
   }
   if (spec.cuff === "ribbed" && m.sleeve) {
     const cuffY = SHOULDER_Y + m.sleeve.drop - 14;
     for (const side of [-1, 1] as const) {
       const outer = CENTER_X + side * (m.shoulder + m.sleeve.extend);
       const inner = CENTER_X + side * (m.shoulder + m.sleeve.extend - m.sleeve.opening);
-      trims.push(ribbingBand(Math.min(outer, inner), Math.max(outer, inner), cuffY, 18));
+      trims.push(...ribbingBand(Math.min(outer, inner), Math.max(outer, inner), cuffY, 18));
     }
   }
-  if (trims.length) parts.push(`<g id="trims">${trims.join("")}</g>`);
+  if (trims.length) groups.push({ id: "trims", elements: trims });
 
   const anchors: Record<string, Point> = {
     "front-chest": { x: CENTER_X, y: CHEST_Y + 42 },
@@ -292,7 +362,8 @@ export function renderHoodie(spec: FlatSpecV1, view: FlatView): RenderedFlat {
 
   return {
     viewBox: `0 0 ${VIEW_BOX.width} ${VIEW_BOX.height}`,
-    body: parts.join(""),
+    body: serializeGroups(groups),
+    groups,
     anchors,
   };
 }

@@ -1,5 +1,12 @@
 import type { FlatSpecV1 } from "@/lib/flats/spec";
-import { type FlatView, type RenderedFlat, renderHoodie } from "@/lib/flats/templates/hoodie";
+import { flatStylesheet } from "@/lib/flats/style";
+import {
+  type FlatElement,
+  type FlatGroup,
+  type FlatView,
+  type RenderedFlat,
+  renderHoodie,
+} from "@/lib/flats/templates/hoodie";
 
 /**
  * Deterministic flat rendering.
@@ -15,15 +22,12 @@ const TEMPLATES = {
 
 export type TemplateId = keyof typeof TEMPLATES;
 
-/** Line weights follow technical-flat convention: heavy outline, fine internal detail. */
-const FLAT_STYLES = `
-.flat-body { fill: var(--flat-fill, #ffffff); stroke: var(--flat-ink, #16233b); stroke-width: 3.2; stroke-linejoin: round; }
-.flat-hood { fill: var(--flat-fill, #ffffff); stroke: var(--flat-ink, #16233b); stroke-width: 2.6; stroke-linejoin: round; }
-.flat-line { fill: none; stroke: var(--flat-ink, #16233b); stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; }
-.flat-zip { fill: none; stroke: var(--flat-ink, #16233b); stroke-width: 1.6; stroke-dasharray: 5 3; }
-.flat-rib { fill: none; stroke: var(--flat-ink, #16233b); stroke-width: 1.4; }
-.flat-rib-tick { fill: none; stroke: var(--flat-ink, #16233b); stroke-width: 0.8; opacity: 0.65; }
-`.trim();
+/**
+ * Line weights follow technical-flat convention: heavy outline, fine internal
+ * detail. Generated from `lib/flats/style.ts` so the browser drawing and the
+ * PDF drawing cannot disagree about stroke weight.
+ */
+const FLAT_STYLES = flatStylesheet();
 
 export function renderFlat(spec: FlatSpecV1, view: FlatView): RenderedFlat {
   const template = TEMPLATES[spec.templateId];
@@ -72,3 +76,10 @@ export function renderFlatPair(
 }
 
 export type { FlatView, RenderedFlat };
+
+/** The drawing before serialization — what a non-SVG renderer consumes. */
+export function renderFlatGroups(spec: FlatSpecV1, view: FlatView): FlatGroup[] {
+  return renderFlat(spec, view).groups;
+}
+
+export type { FlatElement, FlatGroup };

@@ -130,8 +130,14 @@ export function ProductWorkspace({
             <Button variant="outline" onClick={() => toast.success("Read-only factory link copied")}>
               <Share2 /> Share
             </Button>
-            <Button variant="outline" onClick={() => window.print()}>
-              <Download /> Export PDF
+            {/* A real download from `products/[productId]/export/route.ts`,
+                not the prototype's window.print(). An anchor rather than a
+                fetch so the browser handles the Content-Disposition attachment
+                and the file lands in Downloads with the factory filename. */}
+            <Button variant="outline" asChild>
+              <a href={`/products/${productId}/export`} download>
+                <Download /> Export PDF
+              </a>
             </Button>
             <Button onClick={openAi}>
               <Sparkles /> AI assistant

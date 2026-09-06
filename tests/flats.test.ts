@@ -102,7 +102,13 @@ describe("parameters actually drive geometry", () => {
   });
 
   it("omits sleeves when sleeveless and draws them otherwise", () => {
-    expect(renderFlatSvg(RIVIERA_HOODIE, "front")).not.toContain('id="sleeves"');
+    // Both cases set `sleeve` explicitly. Reading the sleeveless case off
+    // RIVIERA_HOODIE coupled this test to the seed constant, so correcting the
+    // seed (it was sleeveless, contradicting its own cuff and sleeve-length
+    // specs) failed a test about parameter response.
+    expect(renderFlatSvg({ ...RIVIERA_HOODIE, sleeve: "sleeveless" }, "front")).not.toContain(
+      'id="sleeves"',
+    );
     expect(renderFlatSvg({ ...RIVIERA_HOODIE, sleeve: "long" }, "front")).toContain('id="sleeves"');
   });
 

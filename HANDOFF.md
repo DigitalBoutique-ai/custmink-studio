@@ -26,8 +26,8 @@ is done.
 
 | | |
 |---|---|
-| Source | 96 files across `app/ components/ lib/ db/ types/ tests/ scripts/ tools/` |
-| Tests | 135 passing, 9 files |
+| Source | 103 files across `app/ components/ lib/ db/ types/ tests/ scripts/ tools/` |
+| Tests | 167 passing, 10 files |
 | Schema | 9 tables of ~48, 1 migration (`drizzle/0000_large_mandarin.sql`) applied |
 | Spec | `CLAUDE_CODE_MASTER_PROMPT.md` + the 2026-09-05 amendment; decisions in `docs/DECISIONS.md`, accounts in `docs/ACCOUNTS.md` |
 | CI | `.github/workflows/ci.yml`, green on the last two runs |
@@ -66,24 +66,23 @@ lint rule `custmink/no-dynamic-in-public` enforces this; do not disable it.
 Exora Ink is now the designated pilot (see "What shipped"). `hoodie` is the only
 flat template that exists. A tee or a jogger means a new
 `lib/flats/templates/*.ts` — roughly 300 lines of geometry — so this answer
-gates item 4. Also needed from them: reference blank SKU, target fit changes,
+gates the flat template and the PDF's subject matter. Also needed from them: reference blank SKU, target fit changes,
 fabric and weight, trims and labels, artwork, colorways, target factory and MOQ.
 
 **3. Anthropic credentials — [DECISION].** Blocks the AI structured-draft spike.
 No `ANTHROPIC_API_KEY` and the `ant` CLI is not installed.
 
-**4. PDF vertical slice — [WORK, unblocked, the main build item].** One style
-through React PDF to a branded, paginated document, using the vector flat that
-now exists. The question it answers is whether the output is something a factory
-accepts, and it doubles as the outbound demo. **The subject is no longer the
-Riviera seed** — it is Exora's first real style. Until those details arrive,
-keep the hoodie template and mark every value that will be replaced with
-`TODO(exora)`; do not invent a second fictional garment. Exora runs as a brand
-under the Digital Boutique AI organization until Clerk organizations exist, on
-preview with a dev session until then.
+**4. Replace the `TODO(exora)` placeholders — [WORK, needs item 2].** The PDF
+slice ships with every unresolved pilot value marked `TODO(exora)` and printed
+as `TBC` rather than invented. `grep -rn "TODO(exora)" lib/` lists them:
+supplier, target cost, MOQ, lead time, brand colour, the flat spec, and the
+artwork rows. `tests/pdf.test.ts` asserts the unknown ones still read `TBC`, so
+a plausible-looking invented value cannot slip in unnoticed.
 
 **5. Finish the hoodie template — [WORK].** See "What surprised me" #6. It is a
-credible schematic, not an illustrator-grade flat.
+credible schematic, not an illustrator-grade flat. The hood is still a plain
+arch with no shaped face opening, which is now visible at print size in
+`npm run pdf:preview`.
 
 **6. Section generator — [WORK].** `scripts/gen/section.ts` plus
 `.claude/skills/techpack-section/SKILL.md`. Deterministic parts get a script,
@@ -178,6 +177,26 @@ rather than having to precede it. The reversal arrived as a file in the repo
 rather than in conversation; it was **confirmed in session on 2026-09-05** and
 the amendment applied. The go-to-market in §2 changed with it: decorators and
 print shops moving to private label first, independent apparel brands second.
+
+**The factory PDF vertical slice shipped.** One style renders through React PDF
+to a 10-page branded document: cover, contents, overview, front and back flats,
+colorways, artwork, BOM, measurements, construction, packaging, and a sampling
+page with factory and brand signature blocks. Version and disclaimer footer on
+every page, repeating table headers, no row split across a page break.
+
+- `GET /products/[productId]/export` — verified end to end against Postgres:
+  200, `application/pdf`, 25,967 bytes, 10 pages,
+  `attachment; filename="ci-hod-2407-riviera-oversized-hoodie-techpack.pdf"`,
+  `Cache-Control: private, no-store`. The prototype's `window.print()` button is
+  now a real download.
+- **The flat is real vector geometry in the PDF, not a rasterized preview** —
+  `tests/pdf.test.ts` asserts the bytes contain no `/Subtype /Image`. That
+  assertion is the parametric-flats decision made enforceable.
+- **No font is embedded and no network call happens during an export.** Only the
+  standard PDF fonts, asserted by the absence of `/FontFile`. `Font.register`
+  would fetch a file mid-export.
+- `npm run pdf:preview` writes a PDF to disk for visual review, the sibling of
+  `flats:preview` and for the same reason — see surprise #6.
 
 ---
 
@@ -291,6 +310,56 @@ change, the ownership decision, and `docs/ACCOUNTS.md`. Applying the dated file
 because it looked canonical would have silently dropped three decisions. The
 later revision is now the dated file; the earlier draft is gone.
 
+**14. The seed hoodie was sleeveless, and three other files disagreed with it.**
+`RIVIERA_HOODIE` had `sleeve: "sleeveless"` while the measurement rows specified
+"P03 sleeve length from shoulder, 58-62 cm", the BOM specified 2x2 rib for
+"cuffs / waistband", and the spec itself set `cuff: "ribbed"`. Every test
+passed — nothing cross-checks the flat against the measurement table. The
+contradiction only became visible when the drawing and the measurement table
+appeared in one document, which is precisely what a tech pack is for. Fixed to
+`long`, with the seed description corrected. `tests/pdf.test.ts` now fails if a
+sleeve measurement exists on a sleeveless spec. **Assume other cross-file
+contradictions are waiting**; a factory reading the PDF is the first thing that
+checks them, and that is far too late.
+
+**15. React PDF cannot read the flat renderer's SVG.** The renderer emits
+`<path class="flat-body">` plus a `<style>` block and CSS custom properties.
+`@react-pdf/renderer` supports none of that — no stylesheets, no classes, no
+cascade, no custom properties. The fix was to make the template emit structured
+elements and serialize *those* to markup, so the browser SVG and the PDF are two
+serializations of one geometry rather than two drawings kept in agreement by
+hand. Stroke weights now live once, in `lib/flats/style.ts`. The refactor was
+verified byte-identical against the previous output across four spec variants in
+both views before anything was built on it.
+
+**16. Sleeves were correct geometry that looked broken the moment a colorway
+tinted the flat.** They were drawn after the body with `fill: none`, so the body
+filled and the sleeves stayed white. The template already had the answer for the
+hood — a filled panel the body occludes — and sleeves now use it. Nothing
+detected this but looking at the render, again.
+
+**17. `@react-pdf/renderer`'s dependency graph is ESM-only, and `tsx` compiles
+this repo to CJS.** `@react-pdf/hyphenate` declares an `import` condition and no
+`require`, so `npx tsx script.ts` dies with `ERR_PACKAGE_PATH_NOT_EXPORTED`.
+Vitest and Next both resolve it correctly; only the tsx-based scripts do not.
+`npm run pdf:preview` therefore bundles with esbuild to ESM first. Do not
+"simplify" it back to `tsx`.
+
+**18. Vitest only collects `tests/**/*.test.ts`, so PDF tests cannot use JSX.**
+The document is exposed as `techPackDocument(data)` returning an element rather
+than as a JSX component, which the route wanted anyway. Related: `server-only`
+throws under Vitest, so anything that must be tested has to sit outside
+`lib/data/`, `lib/actions/`, `lib/auth/` and `db/`. That is why `exportFilename`
+lives in `lib/pdf/` beside the document contract rather than next to the
+session-scoped read that uses it.
+
+**19. A test asserting "the Colorways section is present" passed with the whole
+Colorways page deleted.** The table of contents still named it. Section
+assertions now require the string twice — once as a contents entry, once as the
+heading — and the check was confirmed by deleting the page and watching three
+tests go red. Verified the same way as `tests/schema-rules.test.ts`: a guard
+nobody has watched fail is not yet a guard.
+
 **Deliberate and load-bearing, so do not "fix" them:**
 - `lib/draft-store.ts` keeps created tech packs in `localStorage`. A Phase 1A
   bridge until a create server action exists; its tab title reads "Tech pack"
@@ -310,6 +379,7 @@ npm run preflight     # Neon compute rules; exits 1 on violation
 npm run db:generate   # after editing db/schema.ts
 npm run db:seed       # development only, prints the DEV_* ids for .env.local
 npm run flats:preview <out.html>   # render flat variants for visual review
+npm run pdf:preview <out.pdf>      # render the factory tech pack for visual review
 ```
 
 `file:` URLs are blocked in the Playwright MCP; serve previews over HTTP

@@ -71,6 +71,17 @@ describe("required route structure", () => {
     ).toBe(true);
   });
 
+  it("serves the factory PDF export as a route handler, not a page", () => {
+    // A route handler because it returns application/pdf. If this ever becomes
+    // a page.tsx it will render HTML and the download will silently break.
+    expect(
+      existsSync(`${appDir}/(app)/products/[productId]/export/route.ts`),
+    ).toBe(true);
+    expect(
+      existsSync(`${appDir}/(app)/products/[productId]/export/page.tsx`),
+    ).toBe(false);
+  });
+
   it("serves the token-gated share and invite routes", () => {
     expect(existsSync(`${appDir}/(public)/share/[token]/page.tsx`)).toBe(true);
     expect(existsSync(`${appDir}/(public)/share/[token]/comments/page.tsx`)).toBe(true);

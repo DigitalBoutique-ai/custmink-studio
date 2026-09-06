@@ -72,6 +72,37 @@ plus the gap analysis against this repo.
   React PDF vs Gotenberg, Inngest vs a Postgres queue. The existing choices are
   coherent and tested.
 
+## 2026-09-05 — factory PDF vertical slice
+
+- **React PDF (`@react-pdf/renderer` 4.9.0) confirmed as the export engine**, as
+  master prompt §3 names. Renders server-side to a buffer, works under Vitest and
+  Next 16 / React 19.
+- **Only the standard PDF fonts.** `Font.register` would fetch a font file during
+  an export — latency and a failure mode inside a path that must be deterministic.
+  Asserted by the absence of `/FontFile` in the rendered bytes.
+- **The flat goes into the PDF as vector paths, never a raster image.** Asserted
+  by the absence of `/Subtype /Image`. This is the parametric-flats decision made
+  enforceable rather than merely intended.
+- **Flat geometry emits structured elements; markup is a serialization.**
+  `lib/flats/style.ts` holds the stroke weights once, and both the browser
+  stylesheet and the React PDF presentation props derive from it. React PDF
+  supports no stylesheets, classes, or custom properties, so the alternative was
+  two drawings kept in sync by hand.
+- **`lib/pdf/**` is pure and `lib/data/tech-pack-export.ts` is the server
+  boundary.** `server-only` throws under Vitest, and the document transformation
+  is the part most worth testing.
+- **The export route returns `Cache-Control: private, no-store`** and declares no
+  `revalidate`. A tenant-scoped PDF must never sit in a shared cache; the compute
+  rule it appears to break governs public routes, and this one is authenticated
+  and disallowed in `robots.ts`.
+- **`export:create` gates the route**, so a `reviewer` and a `factory_guest` can
+  read a product but cannot export it. An export leaves the audit trail behind.
+- **Unresolved pilot values print as `TBC` and are marked `TODO(exora)`**, never
+  invented. An invented factory or cost is indistinguishable from a real one once
+  printed, and this document goes to a factory. Asserted in `tests/pdf.test.ts`.
+- **Seed hoodie corrected from `sleeveless` to `long`.** It contradicted its own
+  measurement rows, its own BOM, and its own `cuff: "ribbed"`.
+
 ## 2026-09-05 — earlier
 
 - **Production domain is `techpack.intlo.com`**, and it is publicly browsable —

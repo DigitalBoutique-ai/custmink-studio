@@ -141,7 +141,7 @@ async function main(): Promise<void> {
       status: "sampling" as const,
       displayColor: "#8faee8",
       designIntent:
-        "A structured, oversized sleeveless hoodie with a double-layer hood, dropped armholes, deep kangaroo pocket, and premium heavyweight hand feel.",
+        "A structured, oversized hoodie with a double-layer hood, dropped armholes, long set-in sleeves with ribbed cuffs, deep kangaroo pocket, and premium heavyweight hand feel.",
       supplierName: "Northstar Apparel",
       updatedAt: minutes(8),
     },
