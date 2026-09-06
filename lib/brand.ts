@@ -22,6 +22,9 @@ export const PRODUCT_NAME_TM = `${PRODUCT_NAME}${TRADEMARK}`;
 
 export const PRODUCT_TAGLINE = "AI Tech Pack Builder";
 
+/** Canonical origin for metadata, sitemap and OpenGraph. Production only. */
+export const SITE_URL = "https://techpack.intlo.com";
+
 /** `pageTitle("Dashboard")` -> `"Dashboard | The Studio™"`. */
 export function pageTitle(section: string): string {
   return `${section} | ${PRODUCT_NAME_TM}`;

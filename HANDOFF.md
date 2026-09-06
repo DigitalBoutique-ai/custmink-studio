@@ -30,13 +30,13 @@ is done.
 | | |
 |---|---|
 | Source | 103 files across `app/ components/ lib/ db/ types/ tests/ scripts/ tools/` |
-| Tests | 187 passing, 11 files |
+| Tests | 225 passing, 13 files |
 | Schema | 12 tables of ~48, 4 migrations applied (`0000`–`0003`) |
 | Spec | `CLAUDE_CODE_MASTER_PROMPT.md` + the 2026-09-05 amendment; decisions in `docs/DECISIONS.md`, accounts in `docs/ACCOUNTS.md` |
 | CI | `.github/workflows/ci.yml`, green on the last two runs |
 | Repo | `DigitalBoutique-ai/custmink-studio` (private), Vercel git-connected — pushes to `main` deploy |
 | Neon | `custmink-studio` / `purple-king-22972792`, us-east-1, PG 17, 0.25 CU, 5-min scale-to-zero |
-| Production | https://techpack.intlo.com — every `(app)` route redirects to `/sign-in` until a provider is wired (item 1) |
+| Production | https://techpack.intlo.com — `/`, `/pricing`, `/demo` are the static marketing site; every `(app)` route redirects to `/sign-in` until a provider is wired (item 1) |
 | Stable preview alias | https://custmink-studio-git-main-digitalboutique.vercel.app |
 
 **Verified this session** (`npm run verify`, exit 0): typecheck, eslint, 124
@@ -204,6 +204,33 @@ every page, repeating table headers, no row split across a page break.
   would fetch a file mid-export.
 - `npm run pdf:preview` writes a PDF to disk for visual review, the sibling of
   `flats:preview` and for the same reason — see surprise #6.
+
+**The marketing site shipped.** `/` is a static landing page (Concept · Features ·
+Design · Ideas, anchored), `/pricing` is the published price list, and `/demo`
+is a read-only tour of the Riviera hoodie's full record fed from
+`lib/demo-data.ts`. All three build **○ Static, 1h**. Try Now goes to `/demo`,
+not `/dashboard`, because the workspace is now gated behind sign-in and a demo
+that dead-ends at a login wall is worse than no demo.
+
+- The hero is a spec sheet: the real `renderFlatSvg` flat with two POM callouts
+  from the demo measurements and a drawing title block. The one product image
+  on the site is literally the product's output.
+- Every claim is `shipped` or `roadmap` in `lib/marketing/features.ts`, set by
+  hand — **not** derived from the registry's `deliveredInPhase`, which still
+  says four demo-data sections are phase-2 delivered. `tests/marketing.test.ts`
+  asserts the unshipped ones stay marked roadmap, that prices match
+  `docs/DECISIONS.md`, that nothing under `(marketing)` imports a session or
+  the database, and that no `opengraph-image` route exists.
+- The product name lives in `lib/brand.ts`; `SITE_URL` was added there.
+  `metadataBase` is set in the marketing **layout's** metadata, not the root
+  layout, which another session owns while wiring Clerk.
+- Guardrails now cover the new surface: `custmink/no-dynamic-in-public` matches
+  `(marketing)`, preflight #4 matches every `page.tsx` outside the gated
+  `(app)` and `(onboarding)` segments, and `tests/routes.test.ts` asserts the
+  root redirect is gone.
+- `npm run pdf:preview` + `pdftoppm` produced `public/pdf-cover.png`;
+  `public/og.png` is a 1200×630 screenshot of the hero. Both static; neither is
+  a route.
 
 ---
 
@@ -401,6 +428,25 @@ called `listBrands`, which does check — but `require-capability-check` rejecte
 it anyway, and it was right to. An exported reader whose authorization lives one
 call away is the shape that becomes a hole when someone reuses the inner helper.
 Fixed by repeating the check, not by suppressing the rule.
+
+**25. Two sessions were editing this checkout at once, and the tree was still
+buildable.** While the marketing site was being built, another session was
+wiring Clerk in the same working copy — `ClerkProvider` in the root layout,
+`proxy.ts`, real session resolution, the sign-in pages replaced by catch-all
+routes. Neither of us used `git add -A`; each committed by explicit path and
+messaged the other a file map. Two shared files (the lint plugin, the routes
+test) carried both sets of edits and merged cleanly. What did bite: with a
+placeholder Clerk key the dev server 500s on every page and `clerkMiddleware`
+bounces browsers to a handshake URL, so the marketing pages were verified by
+serving `.next/server/app/*.html` — the exact static artifact — over a scratch
+HTTP server instead. **Check `git status` for another session's uncommitted
+files before staging anything.**
+
+**26. Widening preflight to "every page outside `(app)`" immediately flagged
+`(onboarding)/welcome`.** That page calls `auth()` by design — it is gated, not
+public — so the check now excludes both authenticated segments by name. A new
+route group that needs a session has to be added to that list, or preflight
+will (correctly) refuse to pass it.
 
 **Deliberate and load-bearing, so do not "fix" them:**
 - `lib/draft-store.ts` keeps created tech packs in `localStorage`. A Phase 1A

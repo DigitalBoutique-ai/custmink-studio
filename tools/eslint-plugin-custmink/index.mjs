@@ -208,8 +208,11 @@ const noDynamicInPublic = {
   create(context) {
     const path = filePath(context);
     const isRootLayout = path.endsWith("/app/layout.tsx");
-    const isPublicRoute = path.includes("/app/(public)/");
-    const isMiddleware = path.endsWith("/middleware.ts");
+    // (marketing) is as public as (public): static, crawled, and never allowed
+    // to read the request.
+    const isPublicRoute = path.includes("/app/(public)/") || path.includes("/app/(marketing)/");
+    // Next 16 renamed middleware.ts to proxy.ts; both are the request edge.
+    const isMiddleware = path.endsWith("/middleware.ts") || path.endsWith("/proxy.ts");
     if (!isRootLayout && !isPublicRoute && !isMiddleware) return {};
 
     return {

@@ -12,11 +12,15 @@ const appDir = fileURLToPath(new URL("../app", import.meta.url));
  */
 function pageExists(routePath: string): boolean {
   const segments = routePath.replace(/^\//, "");
-  const candidates = [
-    `${appDir}/(app)/${segments}/page.tsx`,
-    `${appDir}/(public)/${segments}/page.tsx`,
-    `${appDir}/${segments}/page.tsx`,
-  ];
+  const last = segments.split("/").pop();
+  // A route may be served by an optional catch-all, e.g. Clerk's sign-in/[[...sign-in]].
+  const files = segments ? [`${segments}/page.tsx`, `${segments}/[[...${last}]]/page.tsx`] : ["page.tsx"];
+  const candidates = files.flatMap((file) => [
+    `${appDir}/(app)/${file}`,
+    `${appDir}/(public)/${file}`,
+    `${appDir}/(marketing)/${file}`,
+    `${appDir}/${file}`,
+  ]);
   return candidates.some((candidate) => existsSync(candidate));
 }
 
@@ -56,6 +60,9 @@ const requiredProductSections = [
 
 const requiredPublicRoutes = ["/sign-in", "/sign-up"];
 
+/** The marketing site: the landing page at the root and the pricing page. */
+const requiredMarketingRoutes = ["/", "/pricing", "/demo"];
+
 describe("required route structure", () => {
   it.each(requiredAuthenticatedRoutes)("serves %s", (route) => {
     expect(pageExists(route)).toBe(true);
@@ -63,6 +70,18 @@ describe("required route structure", () => {
 
   it.each(requiredPublicRoutes)("serves %s", (route) => {
     expect(pageExists(route)).toBe(true);
+  });
+
+  it.each(requiredMarketingRoutes)("serves the marketing route %s", (route) => {
+    expect(pageExists(route)).toBe(true);
+  });
+
+  it("serves the landing page from the marketing group, not a root page", () => {
+    // `app/(marketing)/page.tsx` and `app/page.tsx` both resolve to "/", and
+    // Next fails the build if both exist. The old root page was a redirect to
+    // /dashboard; the marketing group replaced it.
+    expect(existsSync(`${appDir}/(marketing)/page.tsx`)).toBe(true);
+    expect(existsSync(`${appDir}/page.tsx`)).toBe(false);
   });
 
   it.each(requiredProductSections)("serves the %s product section", (section) => {

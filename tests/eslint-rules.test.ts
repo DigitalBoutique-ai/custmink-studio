@@ -110,11 +110,26 @@ ruleTester.run("no-dynamic-in-public", plugin.rules["no-dynamic-in-public"], {
     { code: "const { userId } = await auth();", filename: "/repo/app/(app)/layout.tsx" },
     { code: "const c = await cookies();", filename: "/repo/app/(app)/products/page.tsx" },
     { code: "export default function Layout() { return null; }", filename: "/repo/app/layout.tsx" },
+    {
+      code: "export const revalidate = 3600; export default function Page() { return null; }",
+      filename: "/repo/app/(marketing)/page.tsx",
+    },
   ],
   invalid: [
     {
       code: "const { userId } = await auth();",
       filename: "/repo/app/layout.tsx",
+      errors: [{ messageId: "forbidden" }],
+    },
+    // The marketing group is public: static, crawled, never reads the request.
+    {
+      code: "const c = await cookies();",
+      filename: "/repo/app/(marketing)/page.tsx",
+      errors: [{ messageId: "forbidden" }],
+    },
+    {
+      code: "const { userId } = await auth();",
+      filename: "/repo/app/(marketing)/layout.tsx",
       errors: [{ messageId: "forbidden" }],
     },
     {

@@ -50,12 +50,16 @@ else
   pass "no writes in render paths"
 fi
 
-# 4. Every public route declares an explicit revalidate.
+# 4. Every route outside the authenticated segments declares an explicit
+#    revalidate. Matched by exclusion rather than by naming (public) so a new
+#    route group — (marketing) landed this way — is covered the day it appears.
+#    (app) and (onboarding) both require a session, so they are legitimately
+#    dynamic and excluded here; add a segment to this list only if it is gated.
 MISSING_REVALIDATE=""
 while IFS= read -r file; do
   [ -z "$file" ] && continue
   grep -q "export const revalidate" "$file" || MISSING_REVALIDATE="${MISSING_REVALIDATE}\n  $file"
-done < <(find "app/(public)" -name 'page.tsx' 2>/dev/null)
+done < <(find app -name 'page.tsx' -not -path 'app/(app)/*' -not -path 'app/(onboarding)/*' 2>/dev/null)
 
 if [ -n "$MISSING_REVALIDATE" ]; then
   # shellcheck disable=SC2059
